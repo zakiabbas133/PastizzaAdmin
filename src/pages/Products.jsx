@@ -91,9 +91,7 @@ const formatPrice = (value) => {
 
   if (!trimmed) return '';
 
-  return trimmed.startsWith('Rs. ')
-    ? trimmed
-    : `Rs. ${trimmed}/-`;
+  return trimmed;
 };
 
 /* =============================================================
@@ -729,15 +727,7 @@ const Products = () => {
   const handleSaveItem = async () => {
     if (!validateForm()) return;
 
-    const normalizedImages = (formData.images || [])
-      .map((image) => {
-        if (typeof image === "string") {
-          return image;
-        }
-
-        return image?.src || image?.preview;
-      })
-      .filter(Boolean);
+    const normalizedImages = formData.images
 
     const payload = {
       name: formData.name.trim(),
@@ -782,6 +772,9 @@ const Products = () => {
         ? [...(formData.dealItems || [])]
         : [],
     };
+
+    console.log('image url', viewItem);
+
 
     const isEditing = editingId !== null;
 
@@ -1166,7 +1159,7 @@ const Products = () => {
           },
           {
             label: 'Categories',
-            value: stats.categories,
+            value: categories.length,
             icon: (
               <CategoryOutlinedIcon />
             ),
@@ -1279,7 +1272,8 @@ const Products = () => {
             <Grid
               size={{
                 xs: 12,
-                md: 6,
+                sm: 6,
+                md: 3,
               }}
             >
               <TextField
@@ -1386,8 +1380,34 @@ const Products = () => {
                   </MenuItem>
                 </Select>
               </FormControl>
+
+            </Grid>
+
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 3,
+              }}
+            >
+              <Button
+                variant="outlined"
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  width: '100%'
+                }}
+                onClick={() => {
+                  setSearchQuery('');
+                  setCategory('All');
+                  setDealFilter('All');
+                }}
+              >
+                Clear Filters
+              </Button>
             </Grid>
           </Grid>
+
         </CardContent>
       </Card>
 
@@ -1467,7 +1487,7 @@ const Products = () => {
                   : null;
 
               const primaryImage =
-                item.images?.[0] || '';
+                item.images?.[0].src || '';
 
               return (
                 <Grid
@@ -1822,9 +1842,9 @@ const Products = () => {
                                           .main,
                                     }}
                                   >
-                                    {
+                                    Rs. {
                                       item.dealPrice
-                                    }
+                                    }/-
                                   </Typography>
 
                                   <Typography
@@ -1836,9 +1856,9 @@ const Products = () => {
                                         'text.disabled',
                                     }}
                                   >
-                                    {
+                                    Rs. {
                                       item.price
-                                    }
+                                    }/-
                                   </Typography>
                                 </>
                               ) : (
@@ -1848,9 +1868,9 @@ const Products = () => {
                                     fontWeight: 800,
                                   }}
                                 >
-                                  {
+                                  Rs. {
                                     item.price
-                                  }
+                                  }/-
                                 </Typography>
                               )}
                             </Box>
@@ -2057,12 +2077,7 @@ const Products = () => {
             >
               <Box
                 component="img"
-                src={
-                  viewItem.images?.[
-                  viewImageIndex
-                  ] ||
-                  viewItem.images?.[0]
-                }
+                src={viewItem.images?.[viewImageIndex]?.src}
                 alt={viewItem.name}
                 sx={{
                   width: '100%',
@@ -2195,40 +2210,42 @@ const Products = () => {
                       (
                         src,
                         idx
-                      ) => (
-                        <Box
-                          key={
-                            src +
-                            idx
-                          }
-                          onClick={() =>
-                            setViewImageIndex(
+                      ) => {
+                        return (
+                          <Box
+                            key={
+                              src.id +
                               idx
-                            )
-                          }
-                          component="img"
-                          src={src}
-                          sx={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 1.5,
-                            objectFit:
-                              'cover',
-                            cursor:
-                              'pointer',
-                            border: `2px solid ${idx ===
-                              viewImageIndex
-                              ? '#fff'
-                              : 'transparent'
-                              }`,
-                            opacity:
-                              idx ===
+                            }
+                            onClick={() =>
+                              setViewImageIndex(
+                                idx
+                              )
+                            }
+                            component="img"
+                            src={src.src}
+                            sx={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: 1.5,
+                              objectFit:
+                                'cover',
+                              cursor:
+                                'pointer',
+                              border: `2px solid ${idx ===
                                 viewImageIndex
-                                ? 1
-                                : 0.7,
-                          }}
-                        />
-                      )
+                                ? '#fff'
+                                : 'transparent'
+                                }`,
+                              opacity:
+                                idx ===
+                                  viewImageIndex
+                                  ? 1
+                                  : 0.7,
+                            }}
+                          />
+                        )
+                      }
                     )}
                   </Stack>
                 )}
@@ -2276,9 +2293,9 @@ const Products = () => {
                               .main,
                         }}
                       >
-                        {
+                        Rs. {
                           viewItem.dealPrice
-                        }
+                        }/-
                       </Typography>
 
                       <Typography
@@ -2290,7 +2307,7 @@ const Products = () => {
                             'text.disabled',
                         }}
                       >
-                        {viewItem.price}
+                        Rs. {viewItem.price}/-
                       </Typography>
                     </Box>
                   ) : (
@@ -2300,7 +2317,7 @@ const Products = () => {
                         fontWeight: 800,
                       }}
                     >
-                      {viewItem.price}
+                      Rs. {viewItem.price}/-
                     </Typography>
                   )}
 

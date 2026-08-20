@@ -9,8 +9,33 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-
+import { upload } from "@vercel/blob/client";
 import { db } from "../firebase/firebase";
+import { uploadImageToCloudinary } from "../utils/uploadImage";
+
+const uploadImageToBlob = async (file, dishId) => {
+  if (!(file instanceof File)) {
+    throw new Error("Invalid image file.");
+  }
+
+  const safeFileName = file.name.replace(
+    /[^a-zA-Z0-9._-]/g,
+    "_"
+  );
+
+  const pathname =
+    `dishes/${dishId}/${Date.now()}_${safeFileName}`;
+
+  const blob = await upload(pathname, file, {
+    access: "public",
+    handleUploadUrl: "/api/upload",
+  });
+
+  return {
+    url: blob.url,
+    pathname: blob.pathname,
+  };
+};
 
 export const getDishes = async () => {
   try {
@@ -40,15 +65,26 @@ export const getDishes = async () => {
 
 export const addDish = async (dish) => {
   try {
-    // Check if a dish with the same name already exists
-    const dishesRef = collection(db, "dishes");
+    // ------------------------------------------------
+    // 1. Check duplicate dish
+    // ------------------------------------------------
+
+    const dishesRef = collection(
+      db,
+      "dishes"
+    );
 
     const duplicateQuery = query(
       dishesRef,
-      where("name", "==", dish.name.trim())
+      where(
+        "name",
+        "==",
+        dish.name.trim()
+      )
     );
 
-    const duplicateSnapshot = await getDocs(duplicateQuery);
+    const duplicateSnapshot =
+      await getDocs(duplicateQuery);
 
     if (!duplicateSnapshot.empty) {
       throw new Error(
@@ -56,44 +92,131 @@ export const addDish = async (dish) => {
       );
     }
 
-    // Create the new dish
-    const dishRef = doc(db, "dishes", dish.id);
+    // ------------------------------------------------
+    // 2. Upload images to Cloudinary
+    // ------------------------------------------------
+
+    const uploadedImages = [];
+
+    if (
+      Array.isArray(dish.images) &&
+      dish.images.length > 0
+    ) {
+      for (const image of dish.images) {
+        if (
+          !(image?.file instanceof File)
+        ) {
+          console.warn(
+            "Skipping image because File is missing:",
+            image
+          );
+
+          continue;
+        }
+
+        const uploaded =
+          await uploadImageToCloudinary(
+            image.file,
+            dish.id
+          );
+
+        uploadedImages.push({
+          id: image.id,
+          src: uploaded.url,
+          name:
+            image.name ||
+            image.file.name,
+
+          publicId:
+            uploaded.publicId,
+
+          width:
+            uploaded.width,
+
+          height:
+            uploaded.height,
+
+          format:
+            uploaded.format,
+        });
+      }
+    }
+
+    // ------------------------------------------------
+    // 3. Save dish to Firestore
+    // ------------------------------------------------
+
+    const dishRef = doc(
+      db,
+      "dishes",
+      dish.id
+    );
 
     await setDoc(dishRef, {
       name: dish.name.trim(),
+
       category: dish.category,
 
       price: dish.price,
-      dealPrice: dish.dealPrice || null,
 
-      hotDeal: dish.hotDeal || false,
-      featured: dish.featured || false,
+      dealPrice:
+        dish.dealPrice || null,
 
-      shortDescription: dish.shortDescription || "",
-      description: dish.description || "",
+      hotDeal:
+        dish.hotDeal || false,
 
-      ingredients: dish.ingredients || [],
-      allergens: dish.allergens || [],
-      images: dish.images || [],
-      tags: dish.tags || [],
+      featured:
+        dish.featured || false,
 
-      dealItems: dish.dealItems || [],
+      shortDescription:
+        dish.shortDescription || "",
 
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      description:
+        dish.description || "",
+
+      ingredients:
+        dish.ingredients || [],
+
+      allergens:
+        dish.allergens || [],
+
+      images:
+        uploadedImages,
+
+      tags:
+        dish.tags || [],
+
+      chefRecommendation:
+        dish.chefRecommendation || null,
+
+      dealItems:
+        dish.dealItems || [],
+
+      createdAt:
+        serverTimestamp(),
+
+      updatedAt:
+        serverTimestamp(),
     });
 
     return {
       success: true,
       id: dish.id,
-      message: "Dish added successfully.",
+      images: uploadedImages,
+      message:
+        "Dish added successfully.",
     };
   } catch (error) {
-    console.error("Error adding dish:", error);
+    console.error(
+      "Error adding dish:",
+      error
+    );
 
     return {
       success: false,
-      error: error.message || "Failed to add dish.",
+      error:
+        error.message ||
+        "Failed to add dish.",
     };
   }
 };
