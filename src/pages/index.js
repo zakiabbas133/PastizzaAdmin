@@ -1,0 +1,11 @@
+export { default as Dashboard } from './Dashboard';
+export { default as Analytics } from './Analytics';
+export { default as Users } from './Users';
+export { default as Orders } from './Orders';
+export { default as Products } from './Products';
+export { default as Messages } from './Messages';
+export { default as Notifications } from './Notifications';
+export { default as Reports } from './Reports';
+export { default as Settings } from './Settings';
+export { default as Help } from './Help';
+export { default as AppRoutes } from './AppRoutes';
