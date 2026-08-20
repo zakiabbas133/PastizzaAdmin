@@ -457,7 +457,7 @@ const VisualPanel = () => {
               )}`,
             }}
           >
-            C
+            P
           </Box>
 
           <Typography
@@ -467,7 +467,7 @@ const VisualPanel = () => {
               letterSpacing: '-0.02em',
             }}
           >
-            Cheezious
+            Pastizza
           </Typography>
         </Box>
       </motion.div>
@@ -1060,7 +1060,7 @@ const Login = () => {
               fontSize: 18,
             }}
           >
-            C
+            P
           </Box>
 
           <Typography
@@ -1069,7 +1069,7 @@ const Login = () => {
               fontSize: '1.15rem',
             }}
           >
-            Cheezious
+            Pastizza
           </Typography>
         </Box>
 

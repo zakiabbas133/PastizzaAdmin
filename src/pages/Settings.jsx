@@ -29,7 +29,7 @@ const Settings = () => {
 
   const [formData, setFormData] = useState({
     name: 'Admin User',
-    email: 'admin@cheezious.com',
+    email: 'admin@Pastizza.com',
     notifications: true,
     emailUpdates: false,
     twoFactor: false,

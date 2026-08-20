@@ -1075,7 +1075,7 @@ const Products = () => {
               }}
             >
               Manage every dish on the
-              Cheezious menu, from
+              Pastizza menu, from
               starters to Chef's
               Specials.
             </Typography>
@@ -2667,7 +2667,7 @@ const Products = () => {
               >
                 {editingId !== null
                   ? 'Update the details of this menu item.'
-                  : 'Add a new dish to the Cheezious menu.'}
+                  : 'Add a new dish to the Pastizza menu.'}
               </Typography>
             </Box>
 

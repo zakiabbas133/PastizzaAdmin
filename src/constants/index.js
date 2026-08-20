@@ -1,6 +1,6 @@
 // Application constants
 
-export const APP_NAME = 'Cheezious Admin';
+export const APP_NAME = 'Pastizza Admin';
 export const APP_DESCRIPTION = 'Premium Admin Dashboard';
 
 // User roles
