@@ -21,14 +21,9 @@ export default async function handler(req, res) {
     // 2. Check environment variables
     // -----------------------------------------------
 
-    const cloudName =
-      process.env.CLOUDINARY_CLOUD_NAME;
-
-    const apiKey =
-      process.env.CLOUDINARY_API_KEY;
-
-    const apiSecret =
-      process.env.CLOUDINARY_API_SECRET;
+    const cloudName = "hwsulryt";
+    const apiKey = "276131442533931";
+    const apiSecret = "MZrST220JS0BwJJpU_PfEMpIsW4";
 
     console.log(
       "CLOUDINARY_CLOUD_NAME exists:",
