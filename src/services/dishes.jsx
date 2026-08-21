@@ -213,35 +213,16 @@ export const deleteDish = async (dishId) => {
       dishId
     );
 
-    // ------------------------------------------------
-    // 1. Get the dish first
-    // ------------------------------------------------
-
     const dishSnapshot =
       await getDoc(dishRef);
 
-    if (!dishSnapshot.exists()) {
-      return {
-        success: false,
-        error: "Dish not found.",
-      };
-    }
-
     const dish = dishSnapshot.data();
-
-    // ------------------------------------------------
-    // 2. Get Cloudinary public IDs
-    // ------------------------------------------------
 
     const publicIds = Array.isArray(dish.images)
       ? dish.images
-          .map((image) => image?.publicId)
-          .filter(Boolean)
+        .map((image) => image?.publicId)
+        .filter(Boolean)
       : [];
-
-    // ------------------------------------------------
-    // 3. Delete images from Cloudinary
-    // ------------------------------------------------
 
     if (publicIds.length > 0) {
       await deleteImagesFromCloudinary(
@@ -249,9 +230,12 @@ export const deleteDish = async (dishId) => {
       );
     }
 
-    // ------------------------------------------------
-    // 4. Delete dish from Firestore
-    // ------------------------------------------------
+    if (!dishSnapshot.exists()) {
+      return {
+        success: false,
+        error: "Dish not found.",
+      };
+    }
 
     await deleteDoc(dishRef);
 

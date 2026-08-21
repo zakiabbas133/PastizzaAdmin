@@ -104,16 +104,6 @@ export const deleteImagesFromCloudinary = async (
 
   const text = await response.text();
 
-  console.log(
-    "Cloudinary delete API status:",
-    response.status
-  );
-
-  console.log(
-    "Cloudinary delete API response:",
-    text
-  );
-
   let data = {};
 
   try {
