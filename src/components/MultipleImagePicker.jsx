@@ -161,13 +161,12 @@ const MultipleImagePicker = ({
 
           minHeight: 150,
 
-          border: `2px dashed ${
-            error
+          border: `2px dashed ${error
               ? theme.palette.error.main
               : isDragging
                 ? theme.palette.primary.main
                 : theme.palette.divider
-          }`,
+            }`,
 
           borderRadius: 3,
 

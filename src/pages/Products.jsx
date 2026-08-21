@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 
 import {
   Box,
@@ -31,65 +31,61 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
-} from '@mui/material';
+} from "@mui/material";
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from "framer-motion";
 
-import AddIcon from '@mui/icons-material/Add';
-import SearchIcon from '@mui/icons-material/Search';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import RestaurantMenuOutlinedIcon from '@mui/icons-material/RestaurantMenuOutlined';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-import StarRoundedIcon from '@mui/icons-material/StarRounded';
-import StarOutlineRoundedIcon from '@mui/icons-material/StarOutlineRounded';
-import CloseIcon from '@mui/icons-material/Close';
-import EggAlertOutlinedIcon from '@mui/icons-material/DangerousOutlined';
-import SoupKitchenOutlinedIcon from '@mui/icons-material/SoupKitchenOutlined';
-import FormatQuoteRoundedIcon from '@mui/icons-material/FormatQuoteRounded';
-import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
-import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlineOutlined';
-import { commonTokens } from '../theme/tokens';
-import { addDish, deleteDish, getDishes, updateDish } from '../services/dishes';
-import { getCategories } from '../services/categories';
-import { getIngredients } from '../services/ingredients';
-import { getAllergens } from '../services/allergens';
-import { getTags } from '../services/tags';
+import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from "@mui/icons-material/Search";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import RestaurantMenuOutlinedIcon from "@mui/icons-material/RestaurantMenuOutlined";
+import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
+import StarOutlineRoundedIcon from "@mui/icons-material/StarOutlineRounded";
+import CloseIcon from "@mui/icons-material/Close";
+import EggAlertOutlinedIcon from "@mui/icons-material/DangerousOutlined";
+import SoupKitchenOutlinedIcon from "@mui/icons-material/SoupKitchenOutlined";
+import FormatQuoteRoundedIcon from "@mui/icons-material/FormatQuoteRounded";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
+import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlineOutlined";
+import { commonTokens } from "../theme/tokens";
+import { addDish, deleteDish, getDishes, updateDish } from "../services/dishes";
+import { getCategories } from "../services/categories";
+import { getIngredients } from "../services/ingredients";
+import { getAllergens } from "../services/allergens";
+import { getTags } from "../services/tags";
 
 /* =============================================================
    SOURCE DATA
 ============================================================= */
 
 const CATEGORY_ACCENTS = {
-  Starters: '#2E7D5B',
-  'Main Course': '#B5472B',
-  Desserts: '#A5722E',
-  Drinks: '#6B4A9E',
-  "Chef's Specials": '#B0862B',
+  Starters: "#2E7D5B",
+  "Main Course": "#B5472B",
+  Desserts: "#A5722E",
+  Drinks: "#6B4A9E",
+  "Chef's Specials": "#B0862B",
 };
 
-const getCategoryAccent = (category) =>
-  CATEGORY_ACCENTS[category] || '#6B6B6B';
+const getCategoryAccent = (category) => CATEGORY_ACCENTS[category] || "#6B6B6B";
 
 const parsePrice = (value) => {
   if (!value) return 0;
 
-  const numeric = String(value).replace(
-    /[^0-9.]/g,
-    ''
-  );
+  const numeric = String(value).replace(/[^0-9.]/g, "");
 
   return numeric ? parseFloat(numeric) : 0;
 };
 
 const formatPrice = (value) => {
-  const trimmed = String(value ?? '').trim();
+  const trimmed = String(value ?? "").trim();
 
-  if (!trimmed) return '';
+  if (!trimmed) return "";
 
   return trimmed;
 };
@@ -99,19 +95,19 @@ const formatPrice = (value) => {
 ============================================================= */
 
 const emptyForm = {
-  name: '',
-  category: '',
-  price: '',
-  dealPrice: '',
+  name: "",
+  category: "",
+  price: "",
+  dealPrice: "",
   hotDeal: false,
   featured: false,
-  shortDescription: '',
-  description: '',
+  shortDescription: "",
+  description: "",
   ingredients: [],
   allergens: [],
   images: [],
   tags: [],
-  chefRecommendation: '',
+  chefRecommendation: "",
   dealItems: [],
 };
 
@@ -132,9 +128,9 @@ const Products = () => {
      FILTER STATE
   ========================================================= */
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [category, setCategory] = useState('All');
-  const [dealFilter, setDealFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [category, setCategory] = useState("All");
+  const [dealFilter, setDealFilter] = useState("All");
 
   /* =========================================================
      FORM MODAL STATE
@@ -148,8 +144,8 @@ const Products = () => {
   const [deleteItemId, setDeleteItemId] = useState(null);
   const [toast, setToast] = useState({
     open: false,
-    severity: 'success',
-    message: '',
+    severity: "success",
+    message: "",
   });
 
   /* =========================================================
@@ -164,25 +160,17 @@ const Products = () => {
   ========================================================= */
 
   const INGREDIENT_OPTIONS = [
-    ...new Set(
-      items.flatMap(
-        (item) => item.ingredients || []
-      )
-    ),
+    ...new Set(items.flatMap((item) => item.ingredients || [])),
   ];
 
   const ALLERGEN_OPTIONS = [
-    ...new Set(
-      items.flatMap(
-        (item) => item.allergens || []
-      )
-    ),
+    ...new Set(items.flatMap((item) => item.allergens || [])),
   ];
 
   const getImageSrc = (image) => {
-    if (!image) return '';
+    if (!image) return "";
 
-    if (typeof image === 'string') {
+    if (typeof image === "string") {
       return image;
     }
 
@@ -198,24 +186,22 @@ const Products = () => {
       return image.src;
     }
 
-    return '';
+    return "";
   };
 
   const normalizeImages = (images = []) => {
-    return images
-      .filter(Boolean)
-      .map((image, index) => {
-        if (typeof image === 'string') {
-          return {
-            id: `existing-${index}-${image}`,
-            src: image,
-            file: null,
-            name: `Image ${index + 1}`,
-          };
-        }
+    return images.filter(Boolean).map((image, index) => {
+      if (typeof image === "string") {
+        return {
+          id: `existing-${index}-${image}`,
+          src: image,
+          file: null,
+          name: `Image ${index + 1}`,
+        };
+      }
 
-        return image;
-      });
+      return image;
+    });
   };
 
   const addImages = (files) => {
@@ -223,66 +209,52 @@ const Products = () => {
 
     if (!selectedFiles.length) return;
 
-    const validFiles = selectedFiles.filter(
-      (file) => file.type.startsWith('image/')
+    const validFiles = selectedFiles.filter((file) =>
+      file.type.startsWith("image/"),
     );
 
     if (!validFiles.length) {
       setFormErrors((previous) => ({
         ...previous,
-        images: 'Please select valid image files.',
+        images: "Please select valid image files.",
       }));
 
       return;
     }
 
-    const newImages = validFiles.map(
-      (file, index) => ({
-        id: `${file.name}-${file.lastModified}-${Date.now()}-${index}`,
-        src: URL.createObjectURL(file),
-        preview: URL.createObjectURL(file),
-        file,
-        name: file.name,
-      })
-    );
+    const newImages = validFiles.map((file, index) => ({
+      id: `${file.name}-${file.lastModified}-${Date.now()}-${index}`,
+      src: URL.createObjectURL(file),
+      preview: URL.createObjectURL(file),
+      file,
+      name: file.name,
+    }));
 
     setFormData((previous) => ({
       ...previous,
-      images: [
-        ...previous.images,
-        ...newImages,
-      ],
+      images: [...previous.images, ...newImages],
     }));
 
     setFormErrors((previous) => ({
       ...previous,
-      images: '',
+      images: "",
     }));
   };
 
   const removeImage = (imageId) => {
     setFormData((previous) => ({
       ...previous,
-      images: previous.images.filter(
-        (image) => image.id !== imageId
-      ),
+      images: previous.images.filter((image) => image.id !== imageId),
     }));
   };
 
   const moveImage = (fromIndex, toIndex) => {
     setFormData((previous) => {
-      const updatedImages = [
-        ...previous.images,
-      ];
+      const updatedImages = [...previous.images];
 
-      const [movedImage] =
-        updatedImages.splice(fromIndex, 1);
+      const [movedImage] = updatedImages.splice(fromIndex, 1);
 
-      updatedImages.splice(
-        toIndex,
-        0,
-        movedImage
-      );
+      updatedImages.splice(toIndex, 0, movedImage);
 
       return {
         ...previous,
@@ -295,8 +267,7 @@ const Products = () => {
      DRAG & DROP STATE
   ========================================================= */
 
-  const [isDraggingImages, setIsDraggingImages] =
-    useState(false);
+  const [isDraggingImages, setIsDraggingImages] = useState(false);
 
   const handleImageDragEnter = (event) => {
     event.preventDefault();
@@ -316,10 +287,7 @@ const Products = () => {
     event.preventDefault();
     event.stopPropagation();
 
-    if (
-      event.currentTarget ===
-      event.target
-    ) {
+    if (event.currentTarget === event.target) {
       setIsDraggingImages(false);
     }
   };
@@ -330,18 +298,15 @@ const Products = () => {
 
     setIsDraggingImages(false);
 
-    const files =
-      event.dataTransfer?.files;
+    const files = event.dataTransfer?.files;
 
     addImages(files);
   };
 
-  const handleImageInputChange = (
-    event
-  ) => {
+  const handleImageInputChange = (event) => {
     addImages(event.target.files);
 
-    event.target.value = '';
+    event.target.value = "";
   };
 
   /* =========================================================
@@ -350,61 +315,37 @@ const Products = () => {
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      const query =
-        searchQuery.toLowerCase();
+      const query = searchQuery.toLowerCase();
 
       const matchesSearch =
         item?.name?.toLowerCase()?.includes(query) ||
         item?.category?.toLowerCase()?.includes(query) ||
         item?.shortDescription?.toLowerCase()?.includes(query);
 
-      const matchesCategory =
-        category === 'All' ||
-        item.category === category;
+      const matchesCategory = category === "All" || item.category === category;
 
       let matchesDeal = true;
 
-      if (dealFilter === 'Hot Deals') {
-        matchesDeal = Boolean(
-          item.hotDeal
-        );
+      if (dealFilter === "Hot Deals") {
+        matchesDeal = Boolean(item.hotDeal);
       }
 
-      if (dealFilter === 'Featured') {
-        matchesDeal = Boolean(
-          item.featured
-        );
+      if (dealFilter === "Featured") {
+        matchesDeal = Boolean(item.featured);
       }
 
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesDeal
-      );
+      return matchesSearch && matchesCategory && matchesDeal;
     });
-  }, [
-    items,
-    searchQuery,
-    category,
-    dealFilter,
-  ]);
+  }, [items, searchQuery, category, dealFilter]);
 
   const stats = useMemo(
     () => ({
       total: items.length,
-      featured: items.filter(
-        (item) => item.featured
-      ).length,
-      hotDeals: items.filter(
-        (item) => item.hotDeal
-      ).length,
-      categories: new Set(
-        items.map(
-          (item) => item.category
-        )
-      ).size,
+      featured: items.filter((item) => item.featured).length,
+      hotDeals: items.filter((item) => item.hotDeal).length,
+      categories: new Set(items.map((item) => item.category)).size,
     }),
-    [items]
+    [items],
   );
 
   /* =========================================================
@@ -434,41 +375,24 @@ const Products = () => {
     setFormData({
       name: item.name,
       category: item.category,
-      price: item.price.replace('$', ''),
-      dealPrice: item.dealPrice
-        ? item.dealPrice.replace('$', '')
-        : '',
+      price: item.price.replace("$", ""),
+      dealPrice: item.dealPrice ? item.dealPrice.replace("$", "") : "",
       hotDeal: Boolean(item.hotDeal),
       featured: Boolean(item.featured),
-      shortDescription:
-        item.shortDescription,
-      description:
-        item.description,
+      shortDescription: item.shortDescription,
+      description: item.description,
 
-      ingredients: Array.isArray(
-        item.ingredients
-      )
-        ? [...item.ingredients]
-        : [],
+      ingredients: Array.isArray(item.ingredients) ? [...item.ingredients] : [],
 
-      allergens: Array.isArray(
-        item.allergens
-      )
-        ? [...item.allergens]
-        : [],
+      allergens: Array.isArray(item.allergens) ? [...item.allergens] : [],
 
-      images: normalizeImages(
-        item.images || []
-      ),
+      images: normalizeImages(item.images || []),
 
       tags: item.tags || [],
-      chefRecommendation:
-        item.chefRecommendation || '',
+      chefRecommendation: item.chefRecommendation || "",
 
       // NEW
-      dealItems: Array.isArray(item.dealItems)
-        ? [...item.dealItems]
-        : [],
+      dealItems: Array.isArray(item.dealItems) ? [...item.dealItems] : [],
     });
 
     setIsDraggingImages(false);
@@ -491,25 +415,17 @@ const Products = () => {
   };
 
   const handleFormChange = (event) => {
-    const {
-      name,
-      value,
-      checked,
-      type,
-    } = event.target;
+    const { name, value, checked, type } = event.target;
 
     setFormData((previous) => ({
       ...previous,
-      [name]:
-        type === 'checkbox'
-          ? checked
-          : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
 
     if (formErrors[name]) {
       setFormErrors((previous) => ({
         ...previous,
-        [name]: '',
+        [name]: "",
       }));
     }
   };
@@ -523,22 +439,14 @@ const Products = () => {
       const has = previous?.tags?.includes(tag);
 
       const updatedTags = has
-        ? previous.tags.filter(
-          (entry) => entry !== tag
-        )
-        : [
-          ...previous.tags,
-          tag,
-        ];
+        ? previous.tags.filter((entry) => entry !== tag)
+        : [...previous.tags, tag];
 
       // Clear tags validation error
-      if (
-        updatedTags.length > 0 &&
-        formErrors.tags
-      ) {
+      if (updatedTags.length > 0 && formErrors.tags) {
         setFormErrors((previousErrors) => ({
           ...previousErrors,
-          tags: '',
+          tags: "",
         }));
       }
 
@@ -558,19 +466,14 @@ const Products = () => {
       const has = previous?.ingredients?.includes(ingredient);
 
       const updatedIngredients = has
-        ? previous.ingredients.filter(
-          (entry) => entry !== ingredient
-        )
-        : [
-          ...previous.ingredients,
-          ingredient,
-        ];
+        ? previous.ingredients.filter((entry) => entry !== ingredient)
+        : [...previous.ingredients, ingredient];
 
       // Clear error once at least one ingredient is selected
       if (updatedIngredients.length > 0 && formErrors.ingredients) {
         setFormErrors((previousErrors) => ({
           ...previousErrors,
-          ingredients: '',
+          ingredients: "",
         }));
       }
 
@@ -590,22 +493,14 @@ const Products = () => {
       const has = previous?.allergens?.includes(allergen);
 
       const updatedAllergens = has
-        ? previous.allergens.filter(
-          (entry) => entry !== allergen
-        )
-        : [
-          ...previous.allergens,
-          allergen,
-        ];
+        ? previous.allergens.filter((entry) => entry !== allergen)
+        : [...previous.allergens, allergen];
 
       // Clear allergens validation error
-      if (
-        updatedAllergens.length > 0 &&
-        formErrors.allergens
-      ) {
+      if (updatedAllergens.length > 0 && formErrors.allergens) {
         setFormErrors((previousErrors) => ({
           ...previousErrors,
-          allergens: '',
+          allergens: "",
         }));
       }
 
@@ -625,17 +520,11 @@ const Products = () => {
 
   const toggleDealItem = (itemId) => {
     setFormData((previous) => {
-      const has =
-        previous?.dealItems?.includes(itemId);
+      const has = previous?.dealItems?.includes(itemId);
 
       const updatedDealItems = has
-        ? previous.dealItems.filter(
-          (id) => id !== itemId
-        )
-        : [
-          ...previous.dealItems,
-          itemId,
-        ];
+        ? previous.dealItems.filter((id) => id !== itemId)
+        : [...previous.dealItems, itemId];
 
       return {
         ...previous,
@@ -646,7 +535,7 @@ const Products = () => {
     if (formErrors.dealItems) {
       setFormErrors((previous) => ({
         ...previous,
-        dealItems: '',
+        dealItems: "",
       }));
     }
   };
@@ -659,19 +548,19 @@ const Products = () => {
     const errors = {};
 
     if (!formData.name.trim()) {
-      errors.name = 'Dish name is required.';
+      errors.name = "Dish name is required.";
     }
 
     if (!formData.category.trim()) {
-      errors.category = 'Category is required.';
+      errors.category = "Category is required.";
     }
 
     if (!formData.shortDescription.trim()) {
-      errors.shortDescription = 'A short description is required.';
+      errors.shortDescription = "A short description is required.";
     }
 
     if (!formData.price.trim()) {
-      errors.price = 'Price is required.';
+      errors.price = "Price is required.";
     }
 
     /* =======================================================
@@ -692,32 +581,25 @@ const Products = () => {
     //   }
     // }
 
-
-    if (
-      !formData.images ||
-      formData.images.length === 0
-    ) {
-      errors.images =
-        'At least one dish image is required.';
+    if (!formData.images || formData.images.length === 0) {
+      errors.images = "At least one dish image is required.";
     }
 
     if (formData.ingredients.length <= 0) {
-      errors.ingredients = 'Select atleast one ingredient'
+      errors.ingredients = "Select atleast one ingredient";
     }
 
     if (formData.allergens.length <= 0) {
-      errors.allergens = 'Select at least one allergen';
+      errors.allergens = "Select at least one allergen";
     }
 
     if (formData.tags.length <= 0) {
-      errors.tags = 'Select at least one tag';
+      errors.tags = "Select at least one tag";
     }
 
     setFormErrors(errors);
 
-    return (
-      Object.keys(errors).length === 0
-    );
+    return Object.keys(errors).length === 0;
   };
 
   /* =========================================================
@@ -727,7 +609,7 @@ const Products = () => {
   const handleSaveItem = async () => {
     if (!validateForm()) return;
 
-    const normalizedImages = formData.images
+    const normalizedImages = formData.images;
 
     const payload = {
       name: formData.name.trim(),
@@ -736,53 +618,39 @@ const Products = () => {
 
       price: formatPrice(formData.price),
 
-      dealPrice: formData.hotDeal
-        ? formatPrice(formData.dealPrice)
-        : null,
+      dealPrice: formData.hotDeal ? formatPrice(formData.dealPrice) : null,
 
       hotDeal: Boolean(formData.hotDeal),
 
       featured: Boolean(formData.featured),
 
-      shortDescription:
-        formData.shortDescription.trim(),
+      shortDescription: formData.shortDescription.trim(),
 
       description:
-        formData.description.trim() ||
-        formData.shortDescription.trim(),
+        formData.description.trim() || formData.shortDescription.trim(),
 
-      ingredients: [
-        ...(formData.ingredients || []),
-      ],
+      ingredients: [...(formData.ingredients || [])],
 
-      allergens: [
-        ...(formData.allergens || []),
-      ],
+      allergens: [...(formData.allergens || [])],
 
       images: normalizedImages,
 
-      tags: [
-        ...(formData.tags || []),
-      ],
+      tags: [...(formData.tags || [])],
 
-      chefRecommendation:
-        formData.chefRecommendation?.trim() || null,
+      chefRecommendation: formData.chefRecommendation?.trim() || null,
 
-      dealItems: formData.hotDeal
-        ? [...(formData.dealItems || [])]
-        : [],
+      dealItems: formData.hotDeal ? [...(formData.dealItems || [])] : [],
     };
 
-    console.log('image url', viewItem);
-
+    console.log("image url", viewItem);
 
     const isEditing = editingId !== null;
 
     const itemId = isEditing
       ? editingId
       : `${payload.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`;
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`;
 
     const item = {
       id: itemId,
@@ -803,8 +671,7 @@ const Products = () => {
           message:
             response?.error ||
             response?.message ||
-            `Failed to ${isEditing ? "update" : "add"
-            } dish.`,
+            `Failed to ${isEditing ? "update" : "add"} dish.`,
         });
 
         return;
@@ -813,10 +680,12 @@ const Products = () => {
       // Always get the latest Firestore data
       setLoading(true);
       fetchAndDisplayCatgories()
-        .then(() => fetchAndDisplayDishes()
-          .then(() => fetchAndDisplayIngredients())
-          .then(() => fetchAndDisplayAllergens())
-          .then(() => fetchAndDisplayTags()))
+        .then(() =>
+          fetchAndDisplayDishes()
+            .then(() => fetchAndDisplayIngredients())
+            .then(() => fetchAndDisplayAllergens())
+            .then(() => fetchAndDisplayTags()),
+        )
         .finally(() => {
           setLoading(false);
         });
@@ -830,23 +699,18 @@ const Products = () => {
       });
 
       closeForm();
-
     } catch (error) {
-      console.error(
-        `Error ${isEditing ? "updating" : "adding"
-        } dish:`,
-        error
-      );
+      console.error(`Error ${isEditing ? "updating" : "adding"} dish:`, error);
 
       setToast({
         open: true,
         severity: "error",
         message:
           error?.message ||
-          `Something went wrong while ${isEditing ? "updating" : "adding"
+          `Something went wrong while ${
+            isEditing ? "updating" : "adding"
           } the dish.`,
       });
-
     } finally {
       setLoading(false);
     }
@@ -875,16 +739,16 @@ const Products = () => {
               ...item,
               dealItems: Array.isArray(item.dealItems)
                 ? item.dealItems.filter(
-                  (dealItemId) => dealItemId !== deleteItemId
-                )
+                    (dealItemId) => dealItemId !== deleteItemId,
+                  )
                 : [],
-            }))
+            })),
         );
 
         setToast({
           open: true,
-          severity: 'success',
-          message: 'Dish deleted successfully.',
+          severity: "success",
+          message: "Dish deleted successfully.",
         });
 
         closeForm();
@@ -898,11 +762,8 @@ const Products = () => {
 
       setToast({
         open: true,
-        severity: 'error',
-        message:
-          res?.error ||
-          res?.message ||
-          'Unable to delete this dish.',
+        severity: "error",
+        message: res?.error || res?.message || "Unable to delete this dish.",
       });
 
       if (viewItem && viewItem.id === deleteItemId) {
@@ -911,20 +772,17 @@ const Products = () => {
 
       setDeleteItemId(null);
     } catch (error) {
-      console.error('Error adding dish:', error);
+      console.error("Error adding dish:", error);
 
       setToast({
         open: true,
-        severity: 'error',
+        severity: "error",
         message:
-          error?.message ||
-          'Something went wrong while removing the dish.',
+          error?.message || "Something went wrong while removing the dish.",
       });
     } finally {
       setLoading(false);
     }
-
-
   };
 
   const cancelDeleteItem = () => {
@@ -945,49 +803,49 @@ const Products = () => {
     setViewImageIndex(0);
   };
 
-
   const fetchAndDisplayCatgories = async () => {
     const categoriesData = await getCategories();
     if (categoriesData.success) {
       setCategories(categoriesData.data);
     }
-  }
+  };
 
   const fetchAndDisplayDishes = async () => {
     const dishesData = await getDishes();
     if (dishesData.success) {
       setItems(dishesData.data);
     }
-  }
+  };
 
   const fetchAndDisplayIngredients = async () => {
     const ingredientsData = await getIngredients();
     if (ingredientsData.success) {
       setIngredients(ingredientsData.data);
     }
-  }
+  };
 
   const fetchAndDisplayAllergens = async () => {
     const allergensData = await getAllergens();
     if (allergensData.success) {
       setAllergens(allergensData.data);
     }
-  }
+  };
   const fetchAndDisplayTags = async () => {
     const tagsData = await getTags();
     if (tagsData.success) {
       setTags(tagsData.data);
     }
-
-  }
+  };
 
   useEffect(() => {
     setLoading(true);
     fetchAndDisplayCatgories()
-      .then(() => fetchAndDisplayDishes()
-        .then(() => fetchAndDisplayIngredients())
-        .then(() => fetchAndDisplayAllergens())
-        .then(() => fetchAndDisplayTags()))
+      .then(() =>
+        fetchAndDisplayDishes()
+          .then(() => fetchAndDisplayIngredients())
+          .then(() => fetchAndDisplayAllergens())
+          .then(() => fetchAndDisplayTags()),
+      )
       .finally(() => {
         setLoading(false);
       });
@@ -1000,9 +858,9 @@ const Products = () => {
   return (
     <Box
       sx={{
-        width: '100%',
-        maxWidth: '100%',
-        overflow: 'hidden',
+        width: "100%",
+        maxWidth: "100%",
+        overflow: "hidden",
       }}
     >
       {/* =====================================================
@@ -1024,17 +882,16 @@ const Products = () => {
       >
         <Box
           sx={{
-            display: 'flex',
+            display: "flex",
             flexDirection: {
-              xs: 'column',
-              sm: 'row',
+              xs: "column",
+              sm: "row",
             },
             alignItems: {
-              xs: 'flex-start',
-              sm: 'center',
+              xs: "flex-start",
+              sm: "center",
             },
-            justifyContent:
-              'space-between',
+            justifyContent: "space-between",
             gap: 2,
             marginBottom: {
               xs: 3,
@@ -1047,12 +904,11 @@ const Products = () => {
               variant="h4"
               sx={{
                 fontWeight: 800,
-                letterSpacing:
-                  '-0.5px',
+                letterSpacing: "-0.5px",
                 fontSize: {
-                  xs: '1.7rem',
-                  sm: '2rem',
-                  md: '2.2rem',
+                  xs: "1.7rem",
+                  sm: "2rem",
+                  md: "2.2rem",
                 },
                 marginBottom: 0.75,
               }}
@@ -1067,9 +923,7 @@ const Products = () => {
                 lineHeight: 1.6,
               }}
             >
-              Manage every dish on the
-              Pastizza menu, from
-              starters to Chef's
+              Manage every dish on the Pastizza menu, from starters to Chef's
               Specials.
             </Typography>
           </Box>
@@ -1081,25 +935,23 @@ const Products = () => {
             fullWidth
             sx={{
               width: {
-                xs: '100%',
-                sm: 'auto',
+                xs: "100%",
+                sm: "auto",
               },
               minHeight: 44,
               px: 2.5,
               borderRadius: 2.5,
-              textTransform: 'none',
+              textTransform: "none",
               fontWeight: 700,
-              whiteSpace: 'nowrap',
+              whiteSpace: "nowrap",
               boxShadow: `0 8px 20px ${alpha(
                 theme.palette.primary.main,
-                0.22
+                0.22,
               )}`,
-              '&:hover': {
-                transform:
-                  'translateY(-2px)',
+              "&:hover": {
+                transform: "translateY(-2px)",
               },
-              transition:
-                'all 0.25s ease',
+              transition: "all 0.25s ease",
             }}
           >
             Add Dish
@@ -1119,7 +971,7 @@ const Products = () => {
           md: 3,
         }}
         sx={{
-          width: '100%',
+          width: "100%",
           margin: 0,
           mb: {
             xs: 3,
@@ -1130,42 +982,28 @@ const Products = () => {
       >
         {[
           {
-            label: 'Total Dishes',
+            label: "Total Dishes",
             value: stats.total,
-            icon: (
-              <RestaurantMenuOutlinedIcon />
-            ),
-            color:
-              theme.palette.primary
-                .main,
+            icon: <RestaurantMenuOutlinedIcon />,
+            color: theme.palette.primary.main,
           },
           {
-            label: 'Featured',
+            label: "Featured",
             value: stats.featured,
             icon: <StarRoundedIcon />,
-            color:
-              theme.palette.warning
-                .main,
+            color: theme.palette.warning.main,
           },
           {
-            label: 'Hot Deals',
+            label: "Hot Deals",
             value: stats.hotDeals,
-            icon: (
-              <LocalFireDepartmentIcon />
-            ),
-            color:
-              theme.palette.error
-                .main,
+            icon: <LocalFireDepartmentIcon />,
+            color: theme.palette.error.main,
           },
           {
-            label: 'Categories',
+            label: "Categories",
             value: categories.length,
-            icon: (
-              <CategoryOutlinedIcon />
-            ),
-            color:
-              theme.palette.success
-                .main,
+            icon: <CategoryOutlinedIcon />,
+            color: theme.palette.success.main,
           },
         ].map((stat) => (
           <Grid
@@ -1182,32 +1020,25 @@ const Products = () => {
             <Card
               elevation={0}
               sx={{
-                height: '100%',
+                height: "100%",
                 border: `1px solid ${theme.palette.divider}`,
                 borderRadius: 3,
                 background: `linear-gradient(135deg, ${alpha(
                   stat.color,
-                  0.1
-                )}, ${alpha(
-                  stat.color,
-                  0.03
-                )})`,
+                  0.1,
+                )}, ${alpha(stat.color, 0.03)})`,
               }}
             >
               <CardContent>
                 <Box
                   sx={{
-                    display: 'flex',
-                    justifyContent:
-                      'space-between',
-                    alignItems: 'center',
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
                   <Box>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                    >
+                    <Typography variant="body2" color="text.secondary">
                       {stat.label}
                     </Typography>
 
@@ -1227,16 +1058,10 @@ const Products = () => {
                       width: 48,
                       height: 48,
                       borderRadius: 2.5,
-                      display: 'flex',
-                      alignItems:
-                        'center',
-                      justifyContent:
-                        'center',
-                      backgroundColor:
-                        alpha(
-                          stat.color,
-                          0.12
-                        ),
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: alpha(stat.color, 0.12),
                       color: stat.color,
                     }}
                   >
@@ -1265,10 +1090,7 @@ const Products = () => {
         }}
       >
         <CardContent>
-          <Grid
-            container
-            spacing={2}
-          >
+          <Grid container spacing={2}>
             <Grid
               size={{
                 xs: 12,
@@ -1292,7 +1114,7 @@ const Products = () => {
                   },
                 }}
                 sx={{
-                  '& .MuiOutlinedInput-root': {
+                  "& .MuiOutlinedInput-root": {
                     borderRadius: 2,
                   },
                 }}
@@ -1306,36 +1128,22 @@ const Products = () => {
                 md: 3,
               }}
             >
-              <FormControl
-                fullWidth
-                size="small"
-              >
-                <InputLabel>
-                  Category
-                </InputLabel>
+              <FormControl fullWidth size="small">
+                <InputLabel>Category</InputLabel>
 
                 <Select
                   value={category}
                   label="Category"
-                  onChange={(event) =>
-                    setCategory(
-                      event.target.value
-                    )
-                  }
+                  onChange={(event) => setCategory(event.target.value)}
                   sx={{
                     borderRadius: 2,
                   }}
                 >
-                  {categories.map(
-                    (item) => (
-                      <MenuItem
-                        key={item?.id}
-                        value={item?.name}
-                      >
-                        {item?.name}
-                      </MenuItem>
-                    )
-                  )}
+                  {categories.map((item) => (
+                    <MenuItem key={item?.id} value={item?.name}>
+                      {item?.name}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -1347,40 +1155,24 @@ const Products = () => {
                 md: 3,
               }}
             >
-              <FormControl
-                fullWidth
-                size="small"
-              >
-                <InputLabel>
-                  Show
-                </InputLabel>
+              <FormControl fullWidth size="small">
+                <InputLabel>Show</InputLabel>
 
                 <Select
                   value={dealFilter}
                   label="Show"
-                  onChange={(event) =>
-                    setDealFilter(
-                      event.target.value
-                    )
-                  }
+                  onChange={(event) => setDealFilter(event.target.value)}
                   sx={{
                     borderRadius: 2,
                   }}
                 >
-                  <MenuItem value="All">
-                    All Dishes
-                  </MenuItem>
+                  <MenuItem value="All">All Dishes</MenuItem>
 
-                  <MenuItem value="Hot Deals">
-                    Hot Deals
-                  </MenuItem>
+                  <MenuItem value="Hot Deals">Hot Deals</MenuItem>
 
-                  <MenuItem value="Featured">
-                    Featured
-                  </MenuItem>
+                  <MenuItem value="Featured">Featured</MenuItem>
                 </Select>
               </FormControl>
-
             </Grid>
 
             <Grid
@@ -1394,20 +1186,19 @@ const Products = () => {
                 variant="outlined"
                 sx={{
                   borderRadius: 2,
-                  textTransform: 'none',
-                  width: '100%'
+                  textTransform: "none",
+                  width: "100%",
                 }}
                 onClick={() => {
-                  setSearchQuery('');
-                  setCategory('All');
-                  setDealFilter('All');
+                  setSearchQuery("");
+                  setCategory("All");
+                  setDealFilter("All");
                 }}
               >
                 Clear Filters
               </Button>
             </Grid>
           </Grid>
-
         </CardContent>
       </Card>
 
@@ -1417,10 +1208,9 @@ const Products = () => {
 
       <Box
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent:
-            'space-between',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
           mb: 2,
         }}
       >
@@ -1434,10 +1224,9 @@ const Products = () => {
         </Typography>
 
         <Chip
-          label={`${filteredItems.length} ${filteredItems.length === 1
-            ? 'dish'
-            : 'dishes'
-            }`}
+          label={`${filteredItems.length} ${
+            filteredItems.length === 1 ? "dish" : "dishes"
+          }`}
           size="small"
         />
       </Box>
@@ -1454,7 +1243,7 @@ const Products = () => {
           md: 3,
         }}
         sx={{
-          width: '100%',
+          width: "100%",
           margin: 0,
           mb: {
             xs: 3,
@@ -1464,507 +1253,366 @@ const Products = () => {
         }}
       >
         <AnimatePresence mode="popLayout">
-          {filteredItems.map(
-            (item, index) => {
-              const accent =
-                getCategoryAccent(
-                  item.category
-                );
+          {filteredItems.map((item, index) => {
+            const accent = getCategoryAccent(item.category);
 
-              const discount =
-                item.hotDeal &&
-                  item.dealPrice
-                  ? Math.round(
-                    (1 -
-                      parsePrice(
-                        item.dealPrice
-                      ) /
-                      parsePrice(
-                        item.price
-                      )) *
-                    100
+            const discount =
+              item.hotDeal && item.dealPrice
+                ? Math.round(
+                    (1 - parsePrice(item.dealPrice) / parsePrice(item.price)) *
+                      100,
                   )
-                  : null;
+                : null;
 
-              const primaryImage =
-                item.images?.[0].src || '';
+            const primaryImage = item.images?.[0].src || "";
 
-              return (
-                <Grid
-                  size={{
-                    xs: 12,
-                    sm: 6,
-                    md: 4,
+            return (
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  md: 4,
+                }}
+                sx={{
+                  minWidth: 0,
+                }}
+                key={item.id}
+              >
+                <motion.div
+                  layout
+                  initial={{
+                    opacity: 0,
+                    y: 25,
                   }}
-                  sx={{
-                    minWidth: 0,
+                  animate={{
+                    opacity: 1,
+                    y: 0,
                   }}
-                  key={item.id}
+                  exit={{
+                    opacity: 0,
+                    scale: 0.95,
+                  }}
+                  transition={{
+                    duration: 0.35,
+                    delay: index * 0.04,
+                  }}
+                  style={{
+                    height: "100%",
+                  }}
                 >
-                  <motion.div
-                    layout
-                    initial={{
-                      opacity: 0,
-                      y: 25,
-                    }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    exit={{
-                      opacity: 0,
-                      scale: 0.95,
-                    }}
-                    transition={{
-                      duration: 0.35,
-                      delay:
-                        index * 0.04,
-                    }}
-                    style={{
-                      height: '100%',
+                  <Card
+                    elevation={0}
+                    sx={{
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      border: `1px solid ${theme.palette.divider}`,
+                      borderRadius: 3,
+                      overflow: "hidden",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "translateY(-5px)",
+                        boxShadow: "0 16px 35px rgba(0,0,0,0.12)",
+                        "& .product-image": {
+                          transform: "scale(1.08)",
+                        },
+                      },
                     }}
                   >
-                    <Card
-                      elevation={0}
+                    <Box
                       sx={{
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection:
-                          'column',
-                        border: `1px solid ${theme.palette.divider}`,
-                        borderRadius: 3,
-                        overflow: 'hidden',
-                        transition:
-                          'all 0.3s ease',
-                        '&:hover': {
-                          transform:
-                            'translateY(-5px)',
-                          boxShadow:
-                            '0 16px 35px rgba(0,0,0,0.12)',
-                          '& .product-image':
-                          {
-                            transform:
-                              'scale(1.08)',
-                          },
+                        position: "relative",
+                        height: {
+                          xs: 180,
+                          sm: 190,
+                          md: 200,
                         },
+                        overflow: "hidden",
                       }}
                     >
                       <Box
+                        className="product-image"
+                        component="img"
+                        src={primaryImage}
+                        alt={item.name}
                         sx={{
-                          position:
-                            'relative',
-                          height: {
-                            xs: 180,
-                            sm: 190,
-                            md: 200,
-                          },
-                          overflow:
-                            'hidden',
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          transition: "transform 0.35s ease",
                         }}
-                      >
-                        <Box
-                          className="product-image"
-                          component="img"
-                          src={
-                            primaryImage
-                          }
-                          alt={item.name}
-                          sx={{
-                            width:
-                              '100%',
-                            height:
-                              '100%',
-                            objectFit:
-                              'cover',
-                            transition:
-                              'transform 0.35s ease',
-                          }}
-                        />
+                      />
 
-                        <Box
-                          sx={{
-                            position:
-                              'absolute',
-                            inset: 0,
-                            background:
-                              'linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%)',
-                          }}
-                        />
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          inset: 0,
+                          background:
+                            "linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%)",
+                        }}
+                      />
 
-                        {item.hotDeal && (
-                          <Chip
-                            icon={
-                              <LocalFireDepartmentIcon
-                                sx={{
-                                  fontSize: 16,
-                                }}
-                              />
-                            }
-                            label={
-                              discount
-                                ? `${discount}% OFF`
-                                : 'Hot Deal'
-                            }
-                            size="small"
-                            sx={{
-                              position:
-                                'absolute',
-                              top: 12,
-                              left: 12,
-                              fontWeight: 800,
-                              color:
-                                '#fff',
-                              backgroundColor:
-                                theme
-                                  .palette
-                                  .error
-                                  .main,
-                              '& .MuiChip-icon':
-                              {
-                                color:
-                                  '#fff',
-                              },
-                            }}
-                          />
-                        )}
-
-                        <Tooltip
-                          title={
-                            item.featured
-                              ? 'Featured dish'
-                              : 'Not featured'
-                          }
-                        >
-                          <IconButton
-                            size="small"
-                            sx={{
-                              position:
-                                'absolute',
-                              top: 8,
-                              right: 8,
-                              backgroundColor:
-                                alpha(
-                                  '#000',
-                                  0.35
-                                ),
-                              color:
-                                item.featured
-                                  ? theme
-                                    .palette
-                                    .warning
-                                    .light
-                                  : '#fff',
-                              '&:hover':
-                              {
-                                backgroundColor:
-                                  alpha(
-                                    '#000',
-                                    0.5
-                                  ),
-                              },
-                            }}
-                          >
-                            {item.featured ? (
-                              <StarRoundedIcon fontSize="small" />
-                            ) : (
-                              <StarOutlineRoundedIcon fontSize="small" />
-                            )}
-                          </IconButton>
-                        </Tooltip>
-
+                      {item.hotDeal && (
                         <Chip
-                          label={
-                            item.category
+                          icon={
+                            <LocalFireDepartmentIcon
+                              sx={{
+                                fontSize: 16,
+                              }}
+                            />
                           }
+                          label={discount ? `${discount}% OFF` : "Hot Deal"}
                           size="small"
                           sx={{
-                            position:
-                              'absolute',
-                            bottom: 10,
+                            position: "absolute",
+                            top: 12,
                             left: 12,
-                            fontWeight: 700,
-                            color:
-                              '#fff',
-                            backgroundColor:
-                              alpha(
-                                accent,
-                                0.85
-                              ),
+                            fontWeight: 800,
+                            color: "#fff",
+                            backgroundColor: theme.palette.error.main,
+                            "& .MuiChip-icon": {
+                              color: "#fff",
+                            },
                           }}
                         />
-                      </Box>
+                      )}
 
-                      <CardContent
+                      <Tooltip
+                        title={item.featured ? "Featured dish" : "Not featured"}
+                      >
+                        <IconButton
+                          size="small"
+                          sx={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            backgroundColor: alpha("#000", 0.35),
+                            color: item.featured
+                              ? theme.palette.warning.light
+                              : "#fff",
+                            "&:hover": {
+                              backgroundColor: alpha("#000", 0.5),
+                            },
+                          }}
+                        >
+                          {item.featured ? (
+                            <StarRoundedIcon fontSize="small" />
+                          ) : (
+                            <StarOutlineRoundedIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </Tooltip>
+
+                      <Chip
+                        label={item.category}
+                        size="small"
                         sx={{
-                          flex: 1,
-                          display:
-                            'flex',
-                          flexDirection:
-                            'column',
+                          position: "absolute",
+                          bottom: 10,
+                          left: 12,
+                          fontWeight: 700,
+                          color: "#fff",
+                          backgroundColor: alpha(accent, 0.85),
+                        }}
+                      />
+                    </Box>
+
+                    <CardContent
+                      sx={{
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: 800,
+                          fontSize: "1.05rem",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        <Typography
-                          variant="h6"
+                        {item.name}
+                      </Typography>
+
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          mt: 1,
+                          lineHeight: 1.5,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          minHeight: 42,
+                        }}
+                      >
+                        {item.shortDescription}
+                      </Typography>
+
+                      {item.allergens.length > 0 && (
+                        <Stack
+                          direction="row"
+                          spacing={0.75}
                           sx={{
-                            fontWeight: 800,
-                            fontSize:
-                              '1.05rem',
-                            overflow:
-                              'hidden',
-                            textOverflow:
-                              'ellipsis',
-                            whiteSpace:
-                              'nowrap',
+                            mt: 1.5,
+                            flexWrap: "wrap",
+                            gap: 0.75,
                           }}
                         >
-                          {item.name}
-                        </Typography>
-
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            mt: 1,
-                            lineHeight:
-                              1.5,
-                            display:
-                              '-webkit-box',
-                            WebkitLineClamp:
-                              2,
-                            WebkitBoxOrient:
-                              'vertical',
-                            overflow:
-                              'hidden',
-                            minHeight: 42,
-                          }}
-                        >
-                          {
-                            item.shortDescription
-                          }
-                        </Typography>
-
-                        {item.allergens
-                          .length >
-                          0 && (
-                            <Stack
-                              direction="row"
-                              spacing={
-                                0.75
+                          {item.allergens.slice(0, 3).map((allergen) => (
+                            <Chip
+                              key={allergen}
+                              icon={
+                                <EggAlertOutlinedIcon
+                                  sx={{
+                                    fontSize: 14,
+                                  }}
+                                />
                               }
+                              label={allergen}
+                              size="small"
+                              variant="outlined"
                               sx={{
-                                mt: 1.5,
-                                flexWrap:
-                                  'wrap',
-                                gap: 0.75,
+                                fontSize: "0.7rem",
+                                height: 22,
                               }}
-                            >
-                              {item.allergens
-                                .slice(
-                                  0,
-                                  3
-                                )
-                                .map(
-                                  (
-                                    allergen
-                                  ) => (
-                                    <Chip
-                                      key={
-                                        allergen
-                                      }
-                                      icon={
-                                        <EggAlertOutlinedIcon
-                                          sx={{
-                                            fontSize: 14,
-                                          }}
-                                        />
-                                      }
-                                      label={
-                                        allergen
-                                      }
-                                      size="small"
-                                      variant="outlined"
-                                      sx={{
-                                        fontSize:
-                                          '0.7rem',
-                                        height: 22,
-                                      }}
-                                    />
-                                  )
-                                )}
-                            </Stack>
-                          )}
+                            />
+                          ))}
+                        </Stack>
+                      )}
 
-                        <Divider
-                          sx={{
-                            my: 2,
-                          }}
-                        />
+                      <Divider
+                        sx={{
+                          my: 2,
+                        }}
+                      />
 
-                        <Box
-                          sx={{
-                            display:
-                              'flex',
-                            alignItems:
-                              'center',
-                            justifyContent:
-                              'space-between',
-                            mb: 2,
-                          }}
-                        >
-                          <Box>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              Price
-                            </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          mb: 2,
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Price
+                          </Typography>
 
-                            <Box
-                              sx={{
-                                display:
-                                  'flex',
-                                alignItems:
-                                  'baseline',
-                                gap: 1,
-                              }}
-                            >
-                              {item.hotDeal &&
-                                item.dealPrice ? (
-                                <>
-                                  <Typography
-                                    variant="h6"
-                                    sx={{
-                                      fontWeight: 800,
-                                      color:
-                                        theme
-                                          .palette
-                                          .error
-                                          .main,
-                                    }}
-                                  >
-                                    Rs. {
-                                      item.dealPrice
-                                    }/-
-                                  </Typography>
-
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      textDecoration:
-                                        'line-through',
-                                      color:
-                                        'text.disabled',
-                                    }}
-                                  >
-                                    Rs. {
-                                      item.price
-                                    }/-
-                                  </Typography>
-                                </>
-                              ) : (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "baseline",
+                              gap: 1,
+                            }}
+                          >
+                            {item.hotDeal && item.dealPrice ? (
+                              <>
                                 <Typography
                                   variant="h6"
                                   sx={{
                                     fontWeight: 800,
+                                    color: theme.palette.error.main,
                                   }}
                                 >
-                                  Rs. {
-                                    item.price
-                                  }/-
+                                  Rs. {item.dealPrice}/-
                                 </Typography>
-                              )}
-                            </Box>
-                          </Box>
 
-                          {item.tags
-                            ?.length >
-                            0 && (
-                              <Chip
-                                label={
-                                  item
-                                    .tags[0]
-                                }
-                                size="small"
-                                color="primary"
-                                variant="outlined"
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    textDecoration: "line-through",
+                                    color: "text.disabled",
+                                  }}
+                                >
+                                  Rs. {item.price}/-
+                                </Typography>
+                              </>
+                            ) : (
+                              <Typography
+                                variant="h6"
                                 sx={{
-                                  fontWeight: 700,
+                                  fontWeight: 800,
                                 }}
-                              />
+                              >
+                                Rs. {item.price}/-
+                              </Typography>
                             )}
+                          </Box>
                         </Box>
 
-                        <Box
+                        {item.tags?.length > 0 && (
+                          <Chip
+                            label={item.tags[0]}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{
+                              fontWeight: 700,
+                            }}
+                          />
+                        )}
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1,
+                          mt: "auto",
+                        }}
+                      >
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          startIcon={<VisibilityOutlinedIcon />}
+                          onClick={() => openDetail(item)}
                           sx={{
-                            display:
-                              'flex',
-                            gap: 1,
-                            mt: 'auto',
+                            minHeight: 38,
+                            borderRadius: 2,
+                            textTransform: "none",
+                            fontWeight: 600,
                           }}
                         >
-                          <Button
-                            fullWidth
-                            variant="outlined"
-                            size="small"
-                            startIcon={
-                              <VisibilityOutlinedIcon />
-                            }
-                            onClick={() =>
-                              openDetail(
-                                item
-                              )
-                            }
-                            sx={{
-                              minHeight: 38,
-                              borderRadius: 2,
-                              textTransform:
-                                'none',
-                              fontWeight: 600,
-                            }}
-                          >
-                            View
-                          </Button>
+                          View
+                        </Button>
 
-                          <IconButton
-                            onClick={() =>
-                              openEditForm(
-                                item
-                              )
-                            }
-                            sx={{
-                              width: 38,
-                              height: 38,
-                              border: `1px solid ${theme.palette.divider}`,
-                              borderRadius: 2,
-                            }}
-                          >
-                            <EditOutlinedIcon fontSize="small" />
-                          </IconButton>
+                        <IconButton
+                          onClick={() => openEditForm(item)}
+                          sx={{
+                            width: 38,
+                            height: 38,
+                            border: `1px solid ${theme.palette.divider}`,
+                            borderRadius: 2,
+                          }}
+                        >
+                          <EditOutlinedIcon fontSize="small" />
+                        </IconButton>
 
-                          <IconButton
-                            onClick={() => handleDeleteItem(item.id)}
-                            sx={{
-                              width: 38,
-                              height: 38,
-                              border: `1px solid ${theme.palette.divider}`,
-                              borderRadius: 2,
-                              color:
-                                theme
-                                  .palette
-                                  .error
-                                  .main,
-                            }}
-                          >
-                            <DeleteOutlineIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </Grid>
-              );
-            }
-          )}
+                        <IconButton
+                          onClick={() => handleDeleteItem(item.id)}
+                          sx={{
+                            width: 38,
+                            height: 38,
+                            border: `1px solid ${theme.palette.divider}`,
+                            borderRadius: 2,
+                            color: theme.palette.error.main,
+                          }}
+                        >
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </Grid>
+            );
+          })}
         </AnimatePresence>
       </Grid>
 
@@ -1983,13 +1631,13 @@ const Products = () => {
               xs: 4,
               sm: 6,
             },
-            textAlign: 'center',
+            textAlign: "center",
           }}
         >
           <SoupKitchenOutlinedIcon
             sx={{
               fontSize: 56,
-              color: 'text.disabled',
+              color: "text.disabled",
               mb: 2,
             }}
           />
@@ -2004,12 +1652,8 @@ const Products = () => {
             No dishes found
           </Typography>
 
-          <Typography
-            variant="body2"
-            color="text.secondary"
-          >
-            Try adjusting your search
-            or filters.
+          <Typography variant="body2" color="text.secondary">
+            Try adjusting your search or filters.
           </Typography>
 
           <Button
@@ -2017,12 +1661,12 @@ const Products = () => {
             sx={{
               mt: 3,
               borderRadius: 2,
-              textTransform: 'none',
+              textTransform: "none",
             }}
             onClick={() => {
-              setSearchQuery('');
-              setCategory('All');
-              setDealFilter('All');
+              setSearchQuery("");
+              setCategory("All");
+              setDealFilter("All");
             }}
           >
             Clear Filters
@@ -2042,8 +1686,8 @@ const Products = () => {
         slotProps={{
           backdrop: {
             sx: {
-              backdropFilter: 'blur(8px)',
-              backgroundColor: 'rgba(0, 0, 0, 0.45)',
+              backdropFilter: "blur(8px)",
+              backgroundColor: "rgba(0, 0, 0, 0.45)",
             },
           },
           paper: {
@@ -2052,17 +1696,17 @@ const Products = () => {
                 xs: 0,
                 sm: 4,
               },
-              backgroundImage: 'none',
-              width: '100%',
+              backgroundImage: "none",
+              width: "100%",
               margin: {
                 xs: 0,
                 sm: 2,
               },
               maxHeight: {
-                xs: '100%',
-                sm: '92vh',
+                xs: "100%",
+                sm: "92vh",
               },
-              overflow: 'hidden',
+              overflow: "hidden",
             },
           },
         }}
@@ -2071,7 +1715,7 @@ const Products = () => {
           <>
             <Box
               sx={{
-                position: 'relative',
+                position: "relative",
                 height: 260,
               }}
             >
@@ -2080,41 +1724,31 @@ const Products = () => {
                 src={viewItem.images?.[viewImageIndex]?.src}
                 alt={viewItem.name}
                 sx={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
                 }}
               />
 
               <Box
                 sx={{
-                  position:
-                    'absolute',
+                  position: "absolute",
                   inset: 0,
                   background:
-                    'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.65) 100%)',
+                    "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.65) 100%)",
                 }}
               />
 
               <IconButton
                 onClick={closeDetail}
                 sx={{
-                  position:
-                    'absolute',
+                  position: "absolute",
                   top: 12,
                   right: 12,
-                  backgroundColor:
-                    alpha(
-                      '#000',
-                      0.4
-                    ),
-                  color: '#fff',
-                  '&:hover': {
-                    backgroundColor:
-                      alpha(
-                        '#000',
-                        0.55
-                      ),
+                  backgroundColor: alpha("#000", 0.4),
+                  color: "#fff",
+                  "&:hover": {
+                    backgroundColor: alpha("#000", 0.55),
                   },
                 }}
               >
@@ -2123,8 +1757,7 @@ const Products = () => {
 
               <Box
                 sx={{
-                  position:
-                    'absolute',
+                  position: "absolute",
                   left: 20,
                   bottom: 16,
                   right: 20,
@@ -2135,120 +1768,85 @@ const Products = () => {
                   spacing={1}
                   sx={{
                     mb: 1,
-                    flexWrap:
-                      'wrap',
+                    flexWrap: "wrap",
                     gap: 0.5,
                   }}
                 >
                   <Chip
-                    label={
-                      viewItem.category
-                    }
+                    label={viewItem.category}
                     size="small"
                     sx={{
                       fontWeight: 700,
-                      color: '#fff',
-                      backgroundColor:
-                        alpha(
-                          getCategoryAccent(
-                            viewItem.category
-                          ),
-                          0.85
-                        ),
+                      color: "#fff",
+                      backgroundColor: alpha(
+                        getCategoryAccent(viewItem.category),
+                        0.85,
+                      ),
                     }}
                   />
 
-                  {viewItem.tags?.map(
-                    (tag) => (
-                      <Chip
-                        key={tag}
-                        label={tag}
-                        size="small"
-                        sx={{
-                          fontWeight: 700,
-                          color: '#fff',
-                          backgroundColor:
-                            alpha(
-                              '#000',
-                              0.4
-                            ),
-                        }}
-                      />
-                    )
-                  )}
+                  {viewItem.tags?.map((tag) => (
+                    <Chip
+                      key={tag}
+                      label={tag}
+                      size="small"
+                      sx={{
+                        fontWeight: 700,
+                        color: "#fff",
+                        backgroundColor: alpha("#000", 0.4),
+                      }}
+                    />
+                  ))}
                 </Stack>
 
                 <Typography
                   variant="h5"
                   sx={{
                     fontWeight: 800,
-                    color: '#fff',
+                    color: "#fff",
                   }}
                 >
                   {viewItem.name}
                 </Typography>
               </Box>
 
-              {viewItem.images?.length >
-                1 && (
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{
-                      position:
-                        'absolute',
-                      bottom: -1,
-                      left: 0,
-                      right: 0,
-                      px: 2,
-                      pb: 1,
-                      justifyContent:
-                        'flex-end',
-                    }}
-                  >
-                    {viewItem.images.map(
-                      (
-                        src,
-                        idx
-                      ) => {
-                        return (
-                          <Box
-                            key={
-                              src.id +
-                              idx
-                            }
-                            onClick={() =>
-                              setViewImageIndex(
-                                idx
-                              )
-                            }
-                            component="img"
-                            src={src.src}
-                            sx={{
-                              width: 34,
-                              height: 34,
-                              borderRadius: 1.5,
-                              objectFit:
-                                'cover',
-                              cursor:
-                                'pointer',
-                              border: `2px solid ${idx ===
-                                viewImageIndex
-                                ? '#fff'
-                                : 'transparent'
-                                }`,
-                              opacity:
-                                idx ===
-                                  viewImageIndex
-                                  ? 1
-                                  : 0.7,
-                            }}
-                          />
-                        )
-                      }
-                    )}
-                  </Stack>
-                )}
+              {viewItem.images?.length > 1 && (
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{
+                    position: "absolute",
+                    bottom: -1,
+                    left: 0,
+                    right: 0,
+                    px: 2,
+                    pb: 1,
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  {viewItem.images.map((src, idx) => {
+                    return (
+                      <Box
+                        key={src.id + idx}
+                        onClick={() => setViewImageIndex(idx)}
+                        component="img"
+                        src={src.src}
+                        sx={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 1.5,
+                          objectFit: "cover",
+                          cursor: "pointer",
+                          border: `2px solid ${
+                            idx === viewImageIndex ? "#fff" : "transparent"
+                          }`,
+                          opacity: idx === viewImageIndex ? 1 : 0.7,
+                        }}
+                      />
+                    );
+                  })}
+                </Stack>
+              )}
             </Box>
 
             <DialogContent
@@ -2263,22 +1861,16 @@ const Products = () => {
               <Stack spacing={2.5}>
                 <Box
                   sx={{
-                    display:
-                      'flex',
-                    alignItems:
-                      'center',
-                    justifyContent:
-                      'space-between',
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                   }}
                 >
-                  {viewItem.hotDeal &&
-                    viewItem.dealPrice ? (
+                  {viewItem.hotDeal && viewItem.dealPrice ? (
                     <Box
                       sx={{
-                        display:
-                          'flex',
-                        alignItems:
-                          'baseline',
+                        display: "flex",
+                        alignItems: "baseline",
                         gap: 1.5,
                       }}
                     >
@@ -2286,25 +1878,17 @@ const Products = () => {
                         variant="h4"
                         sx={{
                           fontWeight: 800,
-                          color:
-                            theme
-                              .palette
-                              .error
-                              .main,
+                          color: theme.palette.error.main,
                         }}
                       >
-                        Rs. {
-                          viewItem.dealPrice
-                        }/-
+                        Rs. {viewItem.dealPrice}/-
                       </Typography>
 
                       <Typography
                         variant="h6"
                         sx={{
-                          textDecoration:
-                            'line-through',
-                          color:
-                            'text.disabled',
+                          textDecoration: "line-through",
+                          color: "text.disabled",
                         }}
                       >
                         Rs. {viewItem.price}/-
@@ -2323,26 +1907,16 @@ const Products = () => {
 
                   {viewItem.featured && (
                     <Chip
-                      icon={
-                        <StarRoundedIcon />
-                      }
+                      icon={<StarRoundedIcon />}
                       label="Featured"
                       size="small"
                       sx={{
                         fontWeight: 700,
-                        color:
-                          theme
-                            .palette
-                            .warning
-                            .main,
-                        backgroundColor:
-                          alpha(
-                            theme
-                              .palette
-                              .warning
-                              .main,
-                            0.12
-                          ),
+                        color: theme.palette.warning.main,
+                        backgroundColor: alpha(
+                          theme.palette.warning.main,
+                          0.12,
+                        ),
                       }}
                     />
                   )}
@@ -2362,58 +1936,45 @@ const Products = () => {
                     DEAL CONTENT
                 ================================================= */}
 
-                {viewItem.hotDeal &&
-                  viewItem.dealItems?.length >
-                  0 && (
-                    <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 700,
-                          mb: 1,
-                        }}
-                      >
-                        Included in this deal
-                      </Typography>
+                {viewItem.hotDeal && viewItem.dealItems?.length > 0 && (
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 1,
+                      }}
+                    >
+                      Included in this deal
+                    </Typography>
 
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{
-                          flexWrap:
-                            'wrap',
-                          gap: 1,
-                        }}
-                      >
-                        {viewItem.dealItems.map(
-                          (dealItemId) => {
-                            const dealItem =
-                              items.find(
-                                (item) =>
-                                  item.id ===
-                                  dealItemId
-                              );
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        flexWrap: "wrap",
+                        gap: 1,
+                      }}
+                    >
+                      {viewItem.dealItems.map((dealItemId) => {
+                        const dealItem = items.find(
+                          (item) => item.id === dealItemId,
+                        );
 
-                            if (!dealItem)
-                              return null;
+                        if (!dealItem) return null;
 
-                            return (
-                              <Chip
-                                key={
-                                  dealItemId
-                                }
-                                label={
-                                  dealItem.name
-                                }
-                                size="small"
-                                variant="outlined"
-                              />
-                            );
-                          }
-                        )}
-                      </Stack>
-                    </Box>
-                  )}
+                        return (
+                          <Chip
+                            key={dealItemId}
+                            label={dealItem.name}
+                            size="small"
+                            variant="outlined"
+                          />
+                        );
+                      })}
+                    </Stack>
+                  </Box>
+                )}
 
                 {viewItem.chefRecommendation && (
                   <Box
@@ -2421,20 +1982,11 @@ const Products = () => {
                       p: 2,
                       borderRadius: 2.5,
                       border: `1px dashed ${alpha(
-                        theme.palette
-                          .primary
-                          .main,
-                        0.35
+                        theme.palette.primary.main,
+                        0.35,
                       )}`,
-                      backgroundColor:
-                        alpha(
-                          theme.palette
-                            .primary
-                            .main,
-                          0.05
-                        ),
-                      display:
-                        'flex',
+                      backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                      display: "flex",
                       gap: 1.5,
                     }}
                   >
@@ -2443,131 +1995,93 @@ const Products = () => {
                     <Typography
                       variant="body2"
                       sx={{
-                        fontStyle:
-                          'italic',
+                        fontStyle: "italic",
                       }}
                     >
-                      {
-                        viewItem.chefRecommendation
-                      }
+                      {viewItem.chefRecommendation}
                     </Typography>
                   </Box>
                 )}
 
-                {viewItem.ingredients
-                  ?.length >
-                  0 && (
-                    <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 700,
-                          mb: 1,
-                        }}
-                      >
-                        Ingredients
-                      </Typography>
+                {viewItem.ingredients?.length > 0 && (
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 1,
+                      }}
+                    >
+                      Ingredients
+                    </Typography>
 
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{
-                          flexWrap:
-                            'wrap',
-                          gap: 1,
-                        }}
-                      >
-                        {viewItem.ingredients.map(
-                          (
-                            ingredient
-                          ) => (
-                            <Chip
-                              key={
-                                ingredient
-                              }
-                              label={
-                                ingredient
-                              }
-                              size="small"
-                              variant="outlined"
-                            />
-                          )
-                        )}
-                      </Stack>
-                    </Box>
-                  )}
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        flexWrap: "wrap",
+                        gap: 1,
+                      }}
+                    >
+                      {viewItem.ingredients.map((ingredient) => (
+                        <Chip
+                          key={ingredient}
+                          label={ingredient}
+                          size="small"
+                          variant="outlined"
+                        />
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
 
-                {viewItem.allergens
-                  ?.length >
-                  0 && (
-                    <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 700,
-                          mb: 1,
-                        }}
-                      >
-                        Allergens
-                      </Typography>
+                {viewItem.allergens?.length > 0 && (
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 1,
+                      }}
+                    >
+                      Allergens
+                    </Typography>
 
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{
-                          flexWrap:
-                            'wrap',
-                          gap: 1,
-                        }}
-                      >
-                        {viewItem.allergens.map(
-                          (
-                            allergen
-                          ) => (
-                            <Chip
-                              key={
-                                allergen
-                              }
-                              icon={
-                                <EggAlertOutlinedIcon
-                                  sx={{
-                                    fontSize: 16,
-                                  }}
-                                />
-                              }
-                              label={
-                                allergen
-                              }
-                              size="small"
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        flexWrap: "wrap",
+                        gap: 1,
+                      }}
+                    >
+                      {viewItem.allergens.map((allergen) => (
+                        <Chip
+                          key={allergen}
+                          icon={
+                            <EggAlertOutlinedIcon
                               sx={{
-                                color:
-                                  theme
-                                    .palette
-                                    .warning
-                                    .main,
-                                backgroundColor:
-                                  alpha(
-                                    theme
-                                      .palette
-                                      .warning
-                                      .main,
-                                    0.1
-                                  ),
-                                '& .MuiChip-icon':
-                                {
-                                  color:
-                                    theme
-                                      .palette
-                                      .warning
-                                      .main,
-                                },
+                                fontSize: 16,
                               }}
                             />
-                          )
-                        )}
-                      </Stack>
-                    </Box>
-                  )}
+                          }
+                          label={allergen}
+                          size="small"
+                          sx={{
+                            color: theme.palette.warning.main,
+                            backgroundColor: alpha(
+                              theme.palette.warning.main,
+                              0.1,
+                            ),
+                            "& .MuiChip-icon": {
+                              color: theme.palette.warning.main,
+                            },
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
               </Stack>
             </DialogContent>
 
@@ -2583,18 +2097,13 @@ const Products = () => {
               <Button
                 fullWidth
                 variant="outlined"
-                startIcon={
-                  <EditOutlinedIcon />
-                }
+                startIcon={<EditOutlinedIcon />}
                 onClick={() => {
                   closeDetail();
-                  openEditForm(
-                    viewItem
-                  );
+                  openEditForm(viewItem);
                 }}
                 sx={{
-                  textTransform:
-                    'none',
+                  textTransform: "none",
                   borderRadius: 2,
                   minHeight: 42,
                   fontWeight: 700,
@@ -2619,8 +2128,8 @@ const Products = () => {
         slotProps={{
           backdrop: {
             sx: {
-              backdropFilter: 'blur(8px)',
-              backgroundColor: 'rgba(0, 0, 0, 0.45)',
+              backdropFilter: "blur(8px)",
+              backgroundColor: "rgba(0, 0, 0, 0.45)",
             },
           },
           paper: {
@@ -2629,15 +2138,15 @@ const Products = () => {
                 xs: 0,
                 sm: 4,
               },
-              backgroundImage: 'none',
-              width: '100%',
+              backgroundImage: "none",
+              width: "100%",
               margin: {
                 xs: 0,
                 sm: 2,
               },
               maxHeight: {
-                xs: '100%',
-                sm: '90vh',
+                xs: "100%",
+                sm: "90vh",
               },
             },
           },
@@ -2655,11 +2164,9 @@ const Products = () => {
         >
           <Box
             sx={{
-              display: 'flex',
-              alignItems:
-                'center',
-              justifyContent:
-                'space-between',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
               gap: 2,
             }}
           >
@@ -2670,9 +2177,7 @@ const Products = () => {
                   fontWeight: 800,
                 }}
               >
-                {editingId !== null
-                  ? 'Edit Dish'
-                  : 'Add New Dish'}
+                {editingId !== null ? "Edit Dish" : "Add New Dish"}
               </Typography>
 
               <Typography
@@ -2683,8 +2188,8 @@ const Products = () => {
                 }}
               >
                 {editingId !== null
-                  ? 'Update the details of this menu item.'
-                  : 'Add a new dish to the Pastizza menu.'}
+                  ? "Update the details of this menu item."
+                  : "Add a new dish to the Pastizza menu."}
               </Typography>
             </Box>
 
@@ -2717,18 +2222,10 @@ const Products = () => {
               fullWidth
               label="Dish Name"
               name="name"
-              value={
-                formData.name
-              }
-              onChange={
-                handleFormChange
-              }
-              error={Boolean(
-                formErrors.name
-              )}
-              helperText={
-                formErrors.name
-              }
+              value={formData.name}
+              onChange={handleFormChange}
+              error={Boolean(formErrors.name)}
+              helperText={formErrors.name}
               placeholder="e.g. Truffle Risotto"
             />
 
@@ -2736,48 +2233,27 @@ const Products = () => {
                 CATEGORY + PRICE
             ================================================= */}
 
-            <Grid
-              container
-              spacing={2}
-            >
+            <Grid container spacing={2}>
               <Grid
                 size={{
                   xs: 12,
                   sm: 6,
                 }}
               >
-                <FormControl
-                  fullWidth
-                  error={Boolean(
-                    formErrors.category
-                  )}
-                >
-                  <InputLabel>
-                    Category
-                  </InputLabel>
+                <FormControl fullWidth error={Boolean(formErrors.category)}>
+                  <InputLabel>Category</InputLabel>
 
                   <Select
                     name="category"
                     label="Category"
-                    value={
-                      formData.category
-                    }
-                    onChange={
-                      handleFormChange
-                    }
+                    value={formData.category}
+                    onChange={handleFormChange}
                   >
-                    {categories.map(
-                      (option) => (
-                        <MenuItem
-                          key={option.id}
-                          value={
-                            option.name
-                          }
-                        >
-                          {option.name}
-                        </MenuItem>
-                      )
-                    )}
+                    {categories.map((option) => (
+                      <MenuItem key={option.id} value={option.name}>
+                        {option.name}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -2800,15 +2276,11 @@ const Products = () => {
                   slotProps={{
                     input: {
                       startAdornment: (
-                        <InputAdornment position="start">
-                          Rs.
-                        </InputAdornment>
+                        <InputAdornment position="start">Rs.</InputAdornment>
                       ),
                       endAdornment: (
-                        <InputAdornment position="end">
-                          /-
-                        </InputAdornment>
-                      )
+                        <InputAdornment position="end">/-</InputAdornment>
+                      ),
                     },
                   }}
                 />
@@ -2823,18 +2295,10 @@ const Products = () => {
               fullWidth
               label="Short Description"
               name="shortDescription"
-              value={
-                formData.shortDescription
-              }
-              onChange={
-                handleFormChange
-              }
-              error={Boolean(
-                formErrors.shortDescription
-              )}
-              helperText={
-                formErrors.shortDescription
-              }
+              value={formData.shortDescription}
+              onChange={handleFormChange}
+              error={Boolean(formErrors.shortDescription)}
+              helperText={formErrors.shortDescription}
               placeholder="One line shown on the menu card"
             />
 
@@ -2848,12 +2312,8 @@ const Products = () => {
               rows={3}
               label="Full Description"
               name="description"
-              value={
-                formData.description
-              }
-              onChange={
-                handleFormChange
-              }
+              value={formData.description}
+              onChange={handleFormChange}
               placeholder="Describe the dish in detail..."
             />
 
@@ -2873,77 +2333,37 @@ const Products = () => {
               </Typography>
 
               <Box
-                onDragEnter={
-                  handleImageDragEnter
-                }
-                onDragOver={
-                  handleImageDragOver
-                }
-                onDragLeave={
-                  handleImageDragLeave
-                }
-                onDrop={
-                  handleImageDrop
-                }
+                onDragEnter={handleImageDragEnter}
+                onDragOver={handleImageDragOver}
+                onDragLeave={handleImageDragLeave}
+                onDrop={handleImageDrop}
                 sx={{
-                  border: `2px dashed ${isDraggingImages
-                    ? theme
-                      .palette
-                      .primary
-                      .main
-                    : formErrors.images
-                      ? theme
-                        .palette
-                        .error
-                        .main
-                      : theme
-                        .palette
-                        .divider
-                    }`,
+                  border: `2px dashed ${
+                    isDraggingImages
+                      ? theme.palette.primary.main
+                      : formErrors.images
+                        ? theme.palette.error.main
+                        : theme.palette.divider
+                  }`,
                   borderRadius: 3,
                   minHeight: 150,
                   p: 3,
-                  display: 'flex',
-                  alignItems:
-                    'center',
-                  justifyContent:
-                    'center',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  backgroundColor:
-                    isDraggingImages
-                      ? alpha(
-                        theme
-                          .palette
-                          .primary
-                          .main,
-                        0.06
-                      )
-                      : 'transparent',
-                  transition:
-                    'all 0.2s ease',
-                  '&:hover': {
-                    borderColor:
-                      theme
-                        .palette
-                        .primary
-                        .main,
-                    backgroundColor:
-                      alpha(
-                        theme
-                          .palette
-                          .primary
-                          .main,
-                        0.04
-                      ),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  cursor: "pointer",
+                  backgroundColor: isDraggingImages
+                    ? alpha(theme.palette.primary.main, 0.06)
+                    : "transparent",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    borderColor: theme.palette.primary.main,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
                   },
                 }}
                 onClick={() =>
-                  document
-                    .getElementById(
-                      'dish-images-input'
-                    )
-                    ?.click()
+                  document.getElementById("dish-images-input")?.click()
                 }
               >
                 <input
@@ -2952,19 +2372,16 @@ const Products = () => {
                   hidden
                   multiple
                   accept="image/*"
-                  onChange={
-                    handleImageInputChange
-                  }
+                  onChange={handleImageInputChange}
                 />
 
                 <Box>
                   <CloudUploadOutlinedIcon
                     sx={{
                       fontSize: 44,
-                      color:
-                        isDraggingImages
-                          ? 'primary.main'
-                          : 'text.secondary',
+                      color: isDraggingImages
+                        ? "primary.main"
+                        : "text.secondary",
                       mb: 1,
                     }}
                   />
@@ -2976,8 +2393,8 @@ const Products = () => {
                     }}
                   >
                     {isDraggingImages
-                      ? 'Drop your images here'
-                      : 'Drag & drop images here'}
+                      ? "Drop your images here"
+                      : "Drag & drop images here"}
                   </Typography>
 
                   <Typography
@@ -2994,13 +2411,11 @@ const Products = () => {
                     variant="caption"
                     color="text.secondary"
                     sx={{
-                      display:
-                        'block',
+                      display: "block",
                       mt: 1,
                     }}
                   >
-                    You can select multiple
-                    images
+                    You can select multiple images
                   </Typography>
                 </Box>
               </Box>
@@ -3010,223 +2425,146 @@ const Products = () => {
                   variant="caption"
                   color="error"
                   sx={{
-                    display:
-                      'block',
+                    display: "block",
                     mt: 0.75,
                     ml: 1.5,
                   }}
                 >
-                  {
-                    formErrors.images
-                  }
+                  {formErrors.images}
                 </Typography>
               )}
 
-              {formData.images
-                .length > 0 && (
-                  <Box sx={{ mt: 2 }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{
-                        display:
-                          'block',
-                        mb: 1,
-                      }}
-                    >
-                      Selected images (
-                      {
-                        formData
-                          .images
-                          .length
-                      }
-                      )
-                    </Typography>
+              {formData.images.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      display: "block",
+                      mb: 1,
+                    }}
+                  >
+                    Selected images ({formData.images.length})
+                  </Typography>
 
-                    <Grid
-                      container
-                      spacing={1.5}
-                    >
-                      {formData.images.map(
-                        (
-                          image,
-                          index
-                        ) => (
-                          <Grid
-                            key={
-                              image.id ||
-                              `${image.src}-${index}`
-                            }
-                            size={{
-                              xs: 6,
-                              sm: 4,
-                              md: 3,
+                  <Grid container spacing={1.5}>
+                    {formData.images.map((image, index) => (
+                      <Grid
+                        key={image.id || `${image.src}-${index}`}
+                        size={{
+                          xs: 6,
+                          sm: 4,
+                          md: 3,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            position: "relative",
+                            height: 130,
+                            borderRadius: 2,
+                            overflow: "hidden",
+                            border: `1px solid ${theme.palette.divider}`,
+                            "&:hover .image-delete": {
+                              opacity: 1,
+                            },
+                          }}
+                        >
+                          <Box
+                            component="img"
+                            src={getImageSrc(image)}
+                            alt={image.name || `Dish image ${index + 1}`}
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              display: "block",
+                            }}
+                          />
+
+                          {index === 0 && (
+                            <Chip
+                              label="Primary"
+                              size="small"
+                              color="primary"
+                              sx={{
+                                position: "absolute",
+                                top: 8,
+                                left: 8,
+                                fontWeight: 700,
+                              }}
+                            />
+                          )}
+
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              bottom: 8,
+                              left: 8,
+                              width: 26,
+                              height: 26,
+                              borderRadius: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: alpha("#000", 0.65),
+                              color: "#fff",
+                              fontSize: 12,
+                              fontWeight: 700,
                             }}
                           >
-                            <Box
-                              sx={{
-                                position:
-                                  'relative',
-                                height: 130,
-                                borderRadius: 2,
-                                overflow:
-                                  'hidden',
-                                border: `1px solid ${theme.palette.divider}`,
-                                '&:hover .image-delete':
-                                {
-                                  opacity: 1,
-                                },
-                              }}
-                            >
-                              <Box
-                                component="img"
-                                src={
-                                  getImageSrc(
-                                    image
-                                  )
-                                }
-                                alt={
-                                  image.name ||
-                                  `Dish image ${index +
-                                  1
-                                  }`
-                                }
-                                sx={{
-                                  width:
-                                    '100%',
-                                  height:
-                                    '100%',
-                                  objectFit:
-                                    'cover',
-                                  display:
-                                    'block',
-                                }}
-                              />
+                            {index + 1}
+                          </Box>
 
-                              {index ===
-                                0 && (
-                                  <Chip
-                                    label="Primary"
-                                    size="small"
-                                    color="primary"
-                                    sx={{
-                                      position:
-                                        'absolute',
-                                      top: 8,
-                                      left: 8,
-                                      fontWeight: 700,
-                                    }}
-                                  />
-                                )}
+                          <IconButton
+                            className="image-delete"
+                            size="small"
+                            onClick={(event) => {
+                              event.stopPropagation();
 
-                              <Box
-                                sx={{
-                                  position:
-                                    'absolute',
-                                  bottom: 8,
-                                  left: 8,
-                                  width: 26,
-                                  height: 26,
-                                  borderRadius:
-                                    '50%',
-                                  display:
-                                    'flex',
-                                  alignItems:
-                                    'center',
-                                  justifyContent:
-                                    'center',
-                                  backgroundColor:
-                                    alpha(
-                                      '#000',
-                                      0.65
-                                    ),
-                                  color:
-                                    '#fff',
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {index +
-                                  1}
-                              </Box>
+                              removeImage(image.id);
+                            }}
+                            sx={{
+                              position: "absolute",
+                              top: 6,
+                              right: 6,
+                              width: 30,
+                              height: 30,
+                              color: "#fff",
+                              backgroundColor: alpha("#000", 0.6),
+                              opacity: {
+                                xs: 1,
+                                sm: 0,
+                              },
+                              transition: "opacity 0.2s ease",
+                              "&:hover": {
+                                backgroundColor: theme.palette.error.main,
+                              },
+                            }}
+                          >
+                            <DeleteOutlineRoundedIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
 
-                              <IconButton
-                                className="image-delete"
-                                size="small"
-                                onClick={(
-                                  event
-                                ) => {
-                                  event.stopPropagation();
-
-                                  removeImage(
-                                    image.id
-                                  );
-                                }}
-                                sx={{
-                                  position:
-                                    'absolute',
-                                  top: 6,
-                                  right: 6,
-                                  width: 30,
-                                  height: 30,
-                                  color:
-                                    '#fff',
-                                  backgroundColor:
-                                    alpha(
-                                      '#000',
-                                      0.6
-                                    ),
-                                  opacity:
-                                  {
-                                    xs: 1,
-                                    sm: 0,
-                                  },
-                                  transition:
-                                    'opacity 0.2s ease',
-                                  '&:hover':
-                                  {
-                                    backgroundColor:
-                                      theme
-                                        .palette
-                                        .error
-                                        .main,
-                                  },
-                                }}
-                              >
-                                <DeleteOutlineRoundedIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-
-                            {index >
-                              0 && (
-                                <Button
-                                  fullWidth
-                                  size="small"
-                                  onClick={() =>
-                                    moveImage(
-                                      index,
-                                      0
-                                    )
-                                  }
-                                  sx={{
-                                    mt: 0.5,
-                                    minHeight:
-                                      28,
-                                    textTransform:
-                                      'none',
-                                    fontSize:
-                                      '0.7rem',
-                                  }}
-                                >
-                                  Make Primary
-                                </Button>
-                              )}
-                          </Grid>
-                        )
-                      )}
-                    </Grid>
-                  </Box>
-                )}
+                        {index > 0 && (
+                          <Button
+                            fullWidth
+                            size="small"
+                            onClick={() => moveImage(index, 0)}
+                            sx={{
+                              mt: 0.5,
+                              minHeight: 28,
+                              textTransform: "none",
+                              fontSize: "0.7rem",
+                            }}
+                          >
+                            Make Primary
+                          </Button>
+                        )}
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
             </Box>
 
             {/* =================================================
@@ -3237,12 +2575,8 @@ const Products = () => {
               fullWidth
               label="Chef's Note (optional)"
               name="chefRecommendation"
-              value={
-                formData.chefRecommendation
-              }
-              onChange={
-                handleFormChange
-              }
+              value={formData.chefRecommendation}
+              onChange={handleFormChange}
               placeholder="A tip or pairing suggestion"
             />
 
@@ -3264,79 +2598,53 @@ const Products = () => {
               <Stack
                 direction="row"
                 sx={{
-                  flexWrap: 'wrap',
+                  flexWrap: "wrap",
                   gap: 1,
                 }}
               >
-                {ingredients.map(
-                  (ingredient) => {
-                    const active =
-                      formData.ingredients.includes(
-                        ingredient.name
-                      );
+                {ingredients.map((ingredient) => {
+                  const active = formData.ingredients.includes(ingredient.name);
 
-                    return (
-                      <Chip
-                        key={ingredient.id}
-                        label={ingredient.name}
-                        onClick={() =>
-                          toggleIngredient(
-                            ingredient.name
-                          )
-                        }
-                        color={
-                          active
-                            ? 'primary'
-                            : 'default'
-                        }
-                        variant={
-                          active
-                            ? 'filled'
-                            : 'outlined'
-                        }
-                        sx={{
-                          fontWeight: 600,
-                          cursor:
-                            'pointer',
-                        }}
-                      />
-                    );
-                  }
-                )}
+                  return (
+                    <Chip
+                      key={ingredient.id}
+                      label={ingredient.name}
+                      onClick={() => toggleIngredient(ingredient.name)}
+                      color={active ? "primary" : "default"}
+                      variant={active ? "filled" : "outlined"}
+                      sx={{
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    />
+                  );
+                })}
               </Stack>
 
-              {formData.ingredients
-                .length > 0 && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      display:
-                        'block',
-                      mt: 1,
-                    }}
-                  >
-                    Selected:{' '}
-                    {formData.ingredients.join(
-                      ', '
-                    )}
-                  </Typography>
-                )}
+              {formData.ingredients.length > 0 && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    display: "block",
+                    mt: 1,
+                  }}
+                >
+                  Selected: {formData.ingredients.join(", ")}
+                </Typography>
+              )}
 
               {formErrors.ingredients && (
                 <Typography
                   variant="caption"
                   color="error"
                   sx={{
-                    display:
-                      'block',
+                    display: "block",
                     mt: 0.75,
                     ml: 1.5,
                   }}
                 >
-                  {
-                    formErrors.ingredients
-                  }
+                  {formErrors.ingredients}
                 </Typography>
               )}
             </Box>
@@ -3359,79 +2667,53 @@ const Products = () => {
               <Stack
                 direction="row"
                 sx={{
-                  flexWrap: 'wrap',
+                  flexWrap: "wrap",
                   gap: 1,
                 }}
               >
-                {allergens.map(
-                  (allergen) => {
-                    const active =
-                      formData.allergens.includes(
-                        allergen.name
-                      );
+                {allergens.map((allergen) => {
+                  const active = formData.allergens.includes(allergen.name);
 
-                    return (
-                      <Chip
-                        key={allergen.id}
-                        label={allergen.name}
-                        onClick={() =>
-                          toggleAllergen(
-                            allergen.name
-                          )
-                        }
-                        color={
-                          active
-                            ? 'primary'
-                            : 'default'
-                        }
-                        variant={
-                          active
-                            ? 'filled'
-                            : 'outlined'
-                        }
-                        sx={{
-                          fontWeight: 600,
-                          cursor:
-                            'pointer',
-                        }}
-                      />
-                    );
-                  }
-                )}
+                  return (
+                    <Chip
+                      key={allergen.id}
+                      label={allergen.name}
+                      onClick={() => toggleAllergen(allergen.name)}
+                      color={active ? "primary" : "default"}
+                      variant={active ? "filled" : "outlined"}
+                      sx={{
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    />
+                  );
+                })}
               </Stack>
 
-              {formData.allergens
-                .length > 0 && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      display:
-                        'block',
-                      mt: 1,
-                    }}
-                  >
-                    Selected:{' '}
-                    {formData.allergens.join(
-                      ', '
-                    )}
-                  </Typography>
-                )}
+              {formData.allergens.length > 0 && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    display: "block",
+                    mt: 1,
+                  }}
+                >
+                  Selected: {formData.allergens.join(", ")}
+                </Typography>
+              )}
 
               {formErrors.allergens && (
                 <Typography
                   variant="caption"
                   color="error"
                   sx={{
-                    display:
-                      'block',
+                    display: "block",
                     mt: 0.75,
                     ml: 1.5,
                   }}
                 >
-                  {
-                    formErrors.allergens
-                  }
+                  {formErrors.allergens}
                 </Typography>
               )}
             </Box>
@@ -3454,80 +2736,53 @@ const Products = () => {
               <Stack
                 direction="row"
                 sx={{
-                  flexWrap:
-                    'wrap',
+                  flexWrap: "wrap",
                   gap: 1,
                 }}
               >
-                {tags.map(
-                  (tag) => {
-                    const active =
-                      formData.tags.includes(
-                        tag.name
-                      );
+                {tags.map((tag) => {
+                  const active = formData.tags.includes(tag.name);
 
-                    return (
-                      <Chip
-                        key={tag.id}
-                        label={tag.name}
-                        onClick={() =>
-                          toggleTag(
-                            tag.name
-                          )
-                        }
-                        color={
-                          active
-                            ? 'primary'
-                            : 'default'
-                        }
-                        variant={
-                          active
-                            ? 'filled'
-                            : 'outlined'
-                        }
-                        sx={{
-                          fontWeight: 600,
-                          cursor:
-                            'pointer',
-                        }}
-                      />
-                    );
-                  }
-                )}
+                  return (
+                    <Chip
+                      key={tag.id}
+                      label={tag.name}
+                      onClick={() => toggleTag(tag.name)}
+                      color={active ? "primary" : "default"}
+                      variant={active ? "filled" : "outlined"}
+                      sx={{
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    />
+                  );
+                })}
               </Stack>
 
-              {formData.tags
-                .length > 0 && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      display:
-                        'block',
-                      mt: 1,
-                    }}
-                  >
-                    Selected:{' '}
-                    {formData.tags.join(
-                      ', '
-                    )}
-                  </Typography>
-                )}
+              {formData.tags.length > 0 && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    display: "block",
+                    mt: 1,
+                  }}
+                >
+                  Selected: {formData.tags.join(", ")}
+                </Typography>
+              )}
 
               {formErrors.tags && (
                 <Typography
                   variant="caption"
                   color="error"
                   sx={{
-                    display:
-                      'block',
+                    display: "block",
                     mt: 0.75,
                     ml: 1.5,
                   }}
                 >
-                  {
-                    formErrors.tags
-                  }
+                  {formErrors.tags}
                 </Typography>
               )}
             </Box>
@@ -3542,12 +2797,8 @@ const Products = () => {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={
-                      formData.hotDeal
-                    }
-                    onChange={
-                      handleFormChange
-                    }
+                    checked={formData.hotDeal}
+                    onChange={handleFormChange}
                     name="hotDeal"
                   />
                 }
@@ -3565,7 +2816,7 @@ const Products = () => {
                     error={Boolean(formErrors.dealPrice)}
                     helperText={
                       formErrors.dealPrice ||
-                      'Discounted price shown to customers'
+                      "Discounted price shown to customers"
                     }
                     placeholder="28"
                     sx={{
@@ -3575,15 +2826,11 @@ const Products = () => {
                     slotProps={{
                       input: {
                         startAdornment: (
-                          <InputAdornment position="start">
-                            Rs.
-                          </InputAdornment>
+                          <InputAdornment position="start">Rs.</InputAdornment>
                         ),
                         endAdornment: (
-                          <InputAdornment position="end">
-                            /-
-                          </InputAdornment>
-                        )
+                          <InputAdornment position="end">/-</InputAdornment>
+                        ),
                       },
                     }}
                   />
@@ -3594,149 +2841,103 @@ const Products = () => {
                       Existing dishes from `items` are displayed
                       as selectable chips.
                   ================================================= */}
-                  {
-                    items.length > 0 && (
-                      <Box sx={{ mt: 2 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 700,
-                            mb: 0.75,
-                          }}
-                        >
-                          Deal Items
-                        </Typography>
+                  {items.length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 700,
+                          mb: 0.75,
+                        }}
+                      >
+                        Deal Items
+                      </Typography>
 
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          display: "block",
+                          mb: 1.25,
+                        }}
+                      >
+                        Select one or more existing dishes to include in this
+                        deal.
+                      </Typography>
+
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{
+                          flexWrap: "wrap",
+                          gap: 1,
+                        }}
+                      >
+                        {items
+                          .filter((item) => item.id !== editingId)
+                          .map((dealItem) => {
+                            const active = formData.dealItems.includes(
+                              dealItem.id,
+                            );
+
+                            return (
+                              <Chip
+                                key={dealItem.id}
+                                label={dealItem.name}
+                                onClick={() => toggleDealItem(dealItem.id)}
+                                color={active ? "primary" : "default"}
+                                variant={active ? "filled" : "outlined"}
+                                sx={{
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                }}
+                              />
+                            );
+                          })}
+                      </Stack>
+
+                      {formErrors.dealItems && (
                         <Typography
                           variant="caption"
-                          color="text.secondary"
+                          color="error"
                           sx={{
-                            display: 'block',
-                            mb: 1.25,
+                            display: "block",
+                            mt: 0.75,
                           }}
                         >
-                          Select one or more existing dishes
-                          to include in this deal.
+                          {formErrors.dealItems}
                         </Typography>
+                      )}
 
-                        <Stack
-                          direction="row"
-                          spacing={1}
+                      {formData.dealItems.length > 0 && (
+                        <Box
                           sx={{
-                            flexWrap: 'wrap',
-                            gap: 1,
+                            mt: 1.25,
                           }}
                         >
-                          {items
-                            .filter(
-                              (item) =>
-                                item.id !==
-                                editingId
-                            )
-                            .map(
-                              (dealItem) => {
-                                const active =
-                                  formData.dealItems.includes(
-                                    dealItem.id
-                                  );
-
-                                return (
-                                  <Chip
-                                    key={
-                                      dealItem.id
-                                    }
-                                    label={
-                                      dealItem.name
-                                    }
-                                    onClick={() =>
-                                      toggleDealItem(
-                                        dealItem.id
-                                      )
-                                    }
-                                    color={
-                                      active
-                                        ? 'primary'
-                                        : 'default'
-                                    }
-                                    variant={
-                                      active
-                                        ? 'filled'
-                                        : 'outlined'
-                                    }
-                                    sx={{
-                                      fontWeight: 600,
-                                      cursor:
-                                        'pointer',
-                                    }}
-                                  />
-                                );
-                              }
-                            )}
-                        </Stack>
-
-                        {formErrors.dealItems && (
-                          <Typography
-                            variant="caption"
-                            color="error"
-                            sx={{
-                              display:
-                                'block',
-                              mt: 0.75,
-                            }}
-                          >
-                            {
-                              formErrors.dealItems
-                            }
+                          <Typography variant="caption" color="text.secondary">
+                            Selected:{" "}
+                            {formData.dealItems
+                              .map(
+                                (dealItemId) =>
+                                  items.find((item) => item.id === dealItemId)
+                                    ?.name,
+                              )
+                              .filter(Boolean)
+                              .join(", ")}
                           </Typography>
-                        )}
-
-                        {formData.dealItems
-                          .length > 0 && (
-                            <Box
-                              sx={{
-                                mt: 1.25,
-                              }}
-                            >
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                Selected:{' '}
-                                {formData.dealItems
-                                  .map(
-                                    (
-                                      dealItemId
-                                    ) =>
-                                      items.find(
-                                        (
-                                          item
-                                        ) =>
-                                          item.id ===
-                                          dealItemId
-                                      )?.name
-                                  )
-                                  .filter(Boolean)
-                                  .join(
-                                    ', '
-                                  )}
-                              </Typography>
-                            </Box>
-                          )}
-                      </Box>
-                    )
-                  }
+                        </Box>
+                      )}
+                    </Box>
+                  )}
                 </>
               )}
 
               <FormControlLabel
                 control={
                   <Switch
-                    checked={
-                      formData.featured
-                    }
-                    onChange={
-                      handleFormChange
-                    }
+                    checked={formData.featured}
+                    onChange={handleFormChange}
                     name="featured"
                   />
                 }
@@ -3762,8 +2963,8 @@ const Products = () => {
             py: 2,
             gap: 1,
             flexDirection: {
-              xs: 'column-reverse',
-              sm: 'row',
+              xs: "column-reverse",
+              sm: "row",
             },
           }}
         >
@@ -3771,13 +2972,12 @@ const Products = () => {
             fullWidth
             onClick={closeForm}
             sx={{
-              textTransform:
-                'none',
+              textTransform: "none",
               borderRadius: 2,
               minHeight: 42,
               width: {
-                xs: '100%',
-                sm: 'auto',
+                xs: "100%",
+                sm: "auto",
               },
             }}
           >
@@ -3787,31 +2987,20 @@ const Products = () => {
           <Button
             fullWidth
             variant="contained"
-            startIcon={
-              editingId !== null ? (
-                <EditOutlinedIcon />
-              ) : (
-                <AddIcon />
-              )
-            }
-            onClick={
-              handleSaveItem
-            }
+            startIcon={editingId !== null ? <EditOutlinedIcon /> : <AddIcon />}
+            onClick={handleSaveItem}
             sx={{
-              textTransform:
-                'none',
+              textTransform: "none",
               borderRadius: 2,
               minHeight: 42,
               fontWeight: 700,
               width: {
-                xs: '100%',
-                sm: 'auto',
+                xs: "100%",
+                sm: "auto",
               },
             }}
           >
-            {editingId !== null
-              ? 'Update Dish'
-              : 'Add Dish'}
+            {editingId !== null ? "Update Dish" : "Add Dish"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -3828,8 +3017,8 @@ const Products = () => {
         slotProps={{
           backdrop: {
             sx: {
-              backdropFilter: 'blur(6px)',
-              backgroundColor: 'rgba(0, 0, 0, 0.45)',
+              backdropFilter: "blur(6px)",
+              backgroundColor: "rgba(0, 0, 0, 0.45)",
             },
           },
           paper: {
@@ -3838,14 +3027,14 @@ const Products = () => {
                 xs: 0,
                 sm: 4,
               },
-              backgroundImage: 'none',
-              width: '100%',
+              backgroundImage: "none",
+              width: "100%",
               margin: {
                 xs: 0,
                 sm: 2,
               },
-              overflow: 'hidden',
-              boxShadow: '0 24px 70px rgba(0, 0, 0, 0.25)',
+              overflow: "hidden",
+              boxShadow: "0 24px 70px rgba(0, 0, 0, 0.25)",
             },
           },
         }}
@@ -3853,23 +3042,22 @@ const Products = () => {
         {/* Decorative Header */}
         <Box
           sx={{
-            position: 'relative',
-            display: 'flex',
-            justifyContent: 'center',
+            position: "relative",
+            display: "flex",
+            justifyContent: "center",
             pt: 4,
             pb: 2,
-            overflow: 'hidden',
+            overflow: "hidden",
           }}
         >
           {/* Decorative background circles */}
           <Box
             sx={{
-              position: 'absolute',
+              position: "absolute",
               width: 150,
               height: 150,
-              borderRadius: '50%',
-              backgroundColor: (theme) =>
-                alpha(theme.palette.error.main, 0.08),
+              borderRadius: "50%",
+              backgroundColor: (theme) => alpha(theme.palette.error.main, 0.08),
               top: -75,
               left: -50,
             }}
@@ -3877,12 +3065,11 @@ const Products = () => {
 
           <Box
             sx={{
-              position: 'absolute',
+              position: "absolute",
               width: 120,
               height: 120,
-              borderRadius: '50%',
-              backgroundColor: (theme) =>
-                alpha(theme.palette.error.main, 0.06),
+              borderRadius: "50%",
+              backgroundColor: (theme) => alpha(theme.palette.error.main, 0.06),
               top: -55,
               right: -40,
             }}
@@ -3891,22 +3078,18 @@ const Products = () => {
           {/* Icon */}
           <Box
             sx={{
-              position: 'relative',
+              position: "relative",
               zIndex: 1,
               width: 68,
               height: 68,
-              borderRadius: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: (theme) =>
-                alpha(theme.palette.error.main, 0.1),
-              color: 'error.main',
+              borderRadius: "20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: (theme) => alpha(theme.palette.error.main, 0.1),
+              color: "error.main",
               border: (theme) =>
-                `1px solid ${alpha(
-                  theme.palette.error.main,
-                  0.16
-                )}`,
+                `1px solid ${alpha(theme.palette.error.main, 0.16)}`,
             }}
           >
             <DeleteOutlineRoundedIcon
@@ -3926,25 +3109,25 @@ const Products = () => {
             },
             pt: 1,
             pb: 2,
-            textAlign: 'center',
+            textAlign: "center",
           }}
         >
           <Typography
             variant="h3"
             sx={{
               fontWeight: 800,
-              letterSpacing: '-0.02em',
+              letterSpacing: "-0.02em",
               mb: 1,
             }}
           >
-            {items?.find(x => x.id == deleteItemId)?.name}
+            {items?.find((x) => x.id == deleteItemId)?.name}
           </Typography>
 
           <Typography
             variant="h4"
             sx={{
               fontWeight: 800,
-              letterSpacing: '-0.02em',
+              letterSpacing: "-0.02em",
               mb: 1,
             }}
           >
@@ -3956,12 +3139,12 @@ const Products = () => {
             color="text.secondary"
             sx={{
               maxWidth: 340,
-              mx: 'auto',
+              mx: "auto",
               lineHeight: 1.7,
             }}
           >
-            This dish will be permanently removed from your menu.
-            Any deals containing this dish will also be updated.
+            This dish will be permanently removed from your menu. Any deals
+            containing this dish will also be updated.
           </Typography>
 
           {/* Warning box */}
@@ -3970,17 +3153,14 @@ const Products = () => {
               mt: 3,
               p: 1.75,
               borderRadius: 2.5,
-              display: 'flex',
-              alignItems: 'flex-start',
+              display: "flex",
+              alignItems: "flex-start",
               gap: 1.25,
-              textAlign: 'left',
+              textAlign: "left",
               backgroundColor: (theme) =>
                 alpha(theme.palette.warning.main, 0.08),
               border: (theme) =>
-                `1px solid ${alpha(
-                  theme.palette.warning.main,
-                  0.16
-                )}`,
+                `1px solid ${alpha(theme.palette.warning.main, 0.16)}`,
             }}
           >
             <Box
@@ -3988,13 +3168,13 @@ const Products = () => {
                 flexShrink: 0,
                 width: 28,
                 height: 28,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 backgroundColor: (theme) =>
                   alpha(theme.palette.warning.main, 0.12),
-                color: 'warning.main',
+                color: "warning.main",
               }}
             >
               <Typography
@@ -4025,8 +3205,7 @@ const Products = () => {
                   lineHeight: 1.5,
                 }}
               >
-                Make sure you no longer need this dish before
-                continuing.
+                Make sure you no longer need this dish before continuing.
               </Typography>
             </Box>
           </Box>
@@ -4044,7 +3223,7 @@ const Products = () => {
               sm: 3.5,
             },
             pt: 1,
-            display: 'flex',
+            display: "flex",
             gap: 1.25,
           }}
         >
@@ -4055,10 +3234,10 @@ const Products = () => {
             sx={{
               minHeight: 48,
               borderRadius: 2.5,
-              textTransform: 'none',
+              textTransform: "none",
               fontWeight: 700,
               borderWidth: 1.5,
-              '&:hover': {
+              "&:hover": {
                 borderWidth: 1.5,
               },
             }}
@@ -4071,17 +3250,15 @@ const Products = () => {
             onClick={confirmDeleteItem}
             variant="contained"
             color="error"
-            startIcon={
-              <DeleteOutlineRoundedIcon fontSize="small" />
-            }
+            startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
             sx={{
               minHeight: 48,
               borderRadius: 2.5,
-              textTransform: 'none',
+              textTransform: "none",
               fontWeight: 700,
-              boxShadow: 'none',
-              '&:hover': {
-                boxShadow: 'none',
+              boxShadow: "none",
+              "&:hover": {
+                boxShadow: "none",
               },
             }}
           >
@@ -4180,8 +3357,8 @@ const Products = () => {
           }))
         }
         anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
+          vertical: "bottom",
+          horizontal: "right",
         }}
         sx={{
           bottom: {
@@ -4196,13 +3373,13 @@ const Products = () => {
       >
         <Box
           sx={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
             gap: 1.5,
 
             width: {
-              xs: 'calc(100vw - 32px)',
+              xs: "calc(100vw - 32px)",
               sm: 390,
             },
 
@@ -4210,50 +3387,48 @@ const Products = () => {
             px: 2,
             py: 1.5,
 
-            overflow: 'hidden',
+            overflow: "hidden",
 
             borderRadius: 3,
 
             backgroundColor:
-              toast.severity === 'success'
-                ? 'rgba(255, 255, 255, 0.98)'
-                : 'rgba(255, 255, 255, 0.98)',
+              toast.severity === "success"
+                ? "rgba(255, 255, 255, 0.98)"
+                : "rgba(255, 255, 255, 0.98)",
 
-            border: '1px solid',
+            border: "1px solid",
             borderColor:
-              toast.severity === 'success'
-                ? 'rgba(46, 125, 91, 0.16)'
-                : 'rgba(211, 47, 47, 0.16)',
+              toast.severity === "success"
+                ? "rgba(46, 125, 91, 0.16)"
+                : "rgba(211, 47, 47, 0.16)",
 
             boxShadow:
-              '0 18px 50px rgba(0, 0, 0, 0.16), 0 4px 14px rgba(0, 0, 0, 0.08)',
+              "0 18px 50px rgba(0, 0, 0, 0.16), 0 4px 14px rgba(0, 0, 0, 0.08)",
 
-            backdropFilter: 'blur(18px)',
+            backdropFilter: "blur(18px)",
 
-            animation: 'toastEnter 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+            animation: "toastEnter 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
 
-            '@keyframes toastEnter': {
+            "@keyframes toastEnter": {
               from: {
                 opacity: 0,
-                transform: 'translateY(20px) translateX(15px) scale(0.96)',
+                transform: "translateY(20px) translateX(15px) scale(0.96)",
               },
               to: {
                 opacity: 1,
-                transform: 'translateY(0) translateX(0) scale(1)',
+                transform: "translateY(0) translateX(0) scale(1)",
               },
             },
 
-            '&::before': {
+            "&::before": {
               content: '""',
-              position: 'absolute',
+              position: "absolute",
               left: 0,
               top: 0,
               bottom: 0,
               width: 4,
               backgroundColor:
-                toast.severity === 'success'
-                  ? 'success.main'
-                  : 'error.main',
+                toast.severity === "success" ? "success.main" : "error.main",
             },
           }}
         >
@@ -4265,28 +3440,26 @@ const Products = () => {
               width: 42,
               height: 42,
 
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
 
-              borderRadius: '50%',
+              borderRadius: "50%",
 
               backgroundColor:
-                toast.severity === 'success'
-                  ? 'rgba(46, 125, 91, 0.10)'
-                  : 'rgba(211, 47, 47, 0.10)',
+                toast.severity === "success"
+                  ? "rgba(46, 125, 91, 0.10)"
+                  : "rgba(211, 47, 47, 0.10)",
 
               color:
-                toast.severity === 'success'
-                  ? 'success.main'
-                  : 'error.main',
+                toast.severity === "success" ? "success.main" : "error.main",
 
-              '& svg': {
+              "& svg": {
                 fontSize: 23,
               },
             }}
           >
-            {toast.severity === 'success' ? (
+            {toast.severity === "success" ? (
               <CheckCircleOutlineIcon />
             ) : (
               <ErrorOutlineIcon />
@@ -4302,22 +3475,22 @@ const Products = () => {
           >
             <Typography
               sx={{
-                fontSize: '0.92rem',
+                fontSize: "0.92rem",
                 fontWeight: 700,
-                color: 'text.primary',
+                color: "text.primary",
                 lineHeight: 1.35,
               }}
             >
-              {toast.severity === 'success'
-                ? 'Success'
-                : 'Something went wrong'}
+              {toast.severity === "success"
+                ? "Success"
+                : "Something went wrong"}
             </Typography>
 
             <Typography
               sx={{
                 mt: 0.25,
-                fontSize: '0.82rem',
-                color: 'text.secondary',
+                fontSize: "0.82rem",
+                color: "text.secondary",
                 lineHeight: 1.4,
               }}
             >
@@ -4339,11 +3512,11 @@ const Products = () => {
               width: 30,
               height: 30,
 
-              color: 'text.secondary',
+              color: "text.secondary",
 
-              '&:hover': {
-                backgroundColor: 'action.hover',
-                color: 'text.primary',
+              "&:hover": {
+                backgroundColor: "action.hover",
+                color: "text.primary",
               },
             }}
           >
