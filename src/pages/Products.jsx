@@ -642,8 +642,6 @@ const Products = () => {
       dealItems: formData.hotDeal ? [...(formData.dealItems || [])] : [],
     };
 
-    console.log("image url", viewItem);
-
     const isEditing = editingId !== null;
 
     const itemId = isEditing

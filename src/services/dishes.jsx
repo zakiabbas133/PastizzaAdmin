@@ -2,6 +2,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   query,
   serverTimestamp,
@@ -9,33 +10,9 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-import { upload } from "@vercel/blob/client";
 import { db } from "../firebase/firebase";
 import { uploadImageToCloudinary } from "../utils/uploadImage";
 
-const uploadImageToBlob = async (file, dishId) => {
-  if (!(file instanceof File)) {
-    throw new Error("Invalid image file.");
-  }
-
-  const safeFileName = file.name.replace(
-    /[^a-zA-Z0-9._-]/g,
-    "_"
-  );
-
-  const pathname =
-    `dishes/${dishId}/${Date.now()}_${safeFileName}`;
-
-  const blob = await upload(pathname, file, {
-    access: "public",
-    handleUploadUrl: "/api/upload",
-  });
-
-  return {
-    url: blob.url,
-    pathname: blob.pathname,
-  };
-};
 
 export const getDishes = async () => {
   try {
@@ -249,7 +226,13 @@ export const deleteDish = async (dishId) => {
 };
 
 export const updateDish = async (dishId, dish) => {
+  console.log("Updating dish:", dish);
+
   try {
+    // ------------------------------------------------
+    // 1. Validate
+    // ------------------------------------------------
+
     if (!dishId) {
       return {
         success: false,
@@ -264,41 +247,175 @@ export const updateDish = async (dishId, dish) => {
       };
     }
 
+    // ------------------------------------------------
+    // 2. Get existing dish from Firestore
+    // ------------------------------------------------
+
     const dishRef = doc(db, "dishes", dishId);
+
+    const existingDishSnapshot = await getDoc(dishRef);
+
+    if (!existingDishSnapshot.exists()) {
+      return {
+        success: false,
+        error: "Dish not found.",
+      };
+    }
+
+    // ------------------------------------------------
+    // 3. Process images
+    // ------------------------------------------------
+
+    const finalImages = [];
+
+    if (Array.isArray(dish.images)) {
+      for (const image of dish.images) {
+        // --------------------------------------------
+        // Existing Cloudinary image
+        // --------------------------------------------
+
+        if (
+          image &&
+          typeof image === "object" &&
+          !image.file &&
+          image.src
+        ) {
+          finalImages.push({
+            id: image.id,
+            src: image.src,
+            name: image.name || "",
+            publicId: image.publicId || null,
+            width: image.width || null,
+            height: image.height || null,
+            format: image.format || null,
+          });
+
+          continue;
+        }
+
+        // --------------------------------------------
+        // New image selected from device
+        // --------------------------------------------
+
+        if (
+          image?.file instanceof File
+        ) {
+          try {
+            const uploaded = await uploadImageToCloudinary(
+              image.file,
+              dishId
+            );
+
+            finalImages.push({
+              id: image.id,
+
+              src: uploaded.url,
+
+              name:
+                image.name ||
+                image.file.name,
+
+              publicId:
+                uploaded.publicId,
+
+              width:
+                uploaded.width,
+
+              height:
+                uploaded.height,
+
+              format:
+                uploaded.format,
+            });
+          } catch (uploadError) {
+            console.error(
+              "Failed to upload image:",
+              image,
+              uploadError
+            );
+
+            throw new Error(
+              `Failed to upload image "${image.file.name}".`
+            );
+          }
+        }
+      }
+    }
+
+    // ------------------------------------------------
+    // 4. Update Firestore
+    // ------------------------------------------------
 
     await updateDoc(dishRef, {
       name: dish.name?.trim() || "",
+
       category: dish.category || "",
 
       price: dish.price || "",
-      dealPrice: dish.dealPrice || null,
 
-      hotDeal: dish.hotDeal || false,
-      featured: dish.featured || false,
+      dealPrice:
+        dish.dealPrice || null,
 
-      shortDescription: dish.shortDescription || "",
-      description: dish.description || "",
+      hotDeal:
+        dish.hotDeal || false,
 
-      ingredients: dish.ingredients || [],
-      allergens: dish.allergens || [],
-      images: dish.images || [],
-      tags: dish.tags || [],
+      featured:
+        dish.featured || false,
 
-      dealItems: dish.dealItems || [],
+      shortDescription:
+        dish.shortDescription || "",
 
-      updatedAt: serverTimestamp(),
+      description:
+        dish.description || "",
+
+      ingredients:
+        dish.ingredients || [],
+
+      allergens:
+        dish.allergens || [],
+
+      images:
+        finalImages,
+
+      tags:
+        dish.tags || [],
+
+      chefRecommendation:
+        dish.chefRecommendation || null,
+
+      dealItems:
+        dish.dealItems || [],
+
+      updatedAt:
+        serverTimestamp(),
     });
+
+    // ------------------------------------------------
+    // 5. Return updated data
+    // ------------------------------------------------
 
     return {
       success: true,
-      message: "Dish updated successfully.",
+
+      id: dishId,
+
+      images: finalImages,
+
+      message:
+        "Dish updated successfully.",
     };
   } catch (error) {
-    console.error("Error updating dish:", error);
+    console.error(
+      "Error updating dish:",
+      error
+    );
 
     return {
       success: false,
-      error: error.message || "Failed to update dish.",
+
+      error:
+        error.message ||
+        "Failed to update dish.",
     };
   }
 };
