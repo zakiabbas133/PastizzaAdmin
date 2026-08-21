@@ -33,7 +33,6 @@ export const uploadImageToCloudinary = async (
     CLOUDINARY_UPLOAD_PRESET
   );
 
-  // Optional folder
   formData.append(
     "folder",
     `pastizza/dishes/${dishId}`
@@ -50,7 +49,10 @@ export const uploadImageToCloudinary = async (
   const data = await response.json();
 
   if (!response.ok) {
-    console.error("Cloudinary error:", data);
+    console.error(
+      "Cloudinary upload error:",
+      data
+    );
 
     throw new Error(
       data?.error?.message ||
@@ -65,4 +67,71 @@ export const uploadImageToCloudinary = async (
     height: data.height,
     format: data.format,
   };
+};
+
+export const deleteImagesFromCloudinary = async (
+  publicIds
+) => {
+  if (
+    !Array.isArray(publicIds) ||
+    publicIds.length === 0
+  ) {
+    return {
+      success: true,
+      message: "No images to delete.",
+    };
+  }
+
+  console.log(
+    "Deleting Cloudinary public IDs:",
+    publicIds
+  );
+
+  const response = await fetch(
+    "/api/cloudinary/delete",
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+        publicIds,
+      }),
+    }
+  );
+
+  const text = await response.text();
+
+  console.log(
+    "Cloudinary delete API status:",
+    response.status
+  );
+
+  console.log(
+    "Cloudinary delete API response:",
+    text
+  );
+
+  let data = {};
+
+  try {
+    data = text
+      ? JSON.parse(text)
+      : {};
+  } catch {
+    throw new Error(
+      `Invalid response from delete API: ${text}`
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error ||
+      `Failed to delete Cloudinary images. Status: ${response.status}`
+    );
+  }
+
+  return data;
 };
