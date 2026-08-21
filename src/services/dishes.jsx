@@ -519,6 +519,44 @@ export const updateDish = async (
       }
     }
 
+
+    if (
+      imagesChanged &&
+      previousPublicIds.length > 0
+    ) {
+      try {
+        await deleteImagesFromCloudinary(
+          previousPublicIds
+        );
+      } catch (deleteError) {
+        // Firestore has already been updated with
+        // the new images.
+        //
+        // Don't report the whole update as failed
+        // because the dish itself was successfully
+        // updated.
+        console.error(
+          "New images saved, but old Cloudinary images could not be deleted:",
+          deleteError
+        );
+
+        return {
+          success: true,
+
+          id: dishId,
+
+          images:
+            uploadedImages,
+
+          warning:
+            "Dish updated successfully, but some previous Cloudinary images could not be deleted.",
+
+          message:
+            "Dish updated successfully.",
+        };
+      }
+    }
+
     // ------------------------------------------------
     // 5. Update Firestore
     // ------------------------------------------------
@@ -572,49 +610,6 @@ export const updateDish = async (
       updatedAt:
         serverTimestamp(),
     });
-
-    // ------------------------------------------------
-    // 6. Delete previous Cloudinary images
-    //
-    // Only do this when the image array was changed.
-    // ------------------------------------------------
-
-    if (
-      imagesChanged &&
-      previousPublicIds.length > 0
-    ) {
-      try {
-        await deleteImagesFromCloudinary(
-          previousPublicIds
-        );
-      } catch (deleteError) {
-        // Firestore has already been updated with
-        // the new images.
-        //
-        // Don't report the whole update as failed
-        // because the dish itself was successfully
-        // updated.
-        console.error(
-          "New images saved, but old Cloudinary images could not be deleted:",
-          deleteError
-        );
-
-        return {
-          success: true,
-
-          id: dishId,
-
-          images:
-            uploadedImages,
-
-          warning:
-            "Dish updated successfully, but some previous Cloudinary images could not be deleted.",
-
-          message:
-            "Dish updated successfully.",
-        };
-      }
-    }
 
     // ------------------------------------------------
     // 7. Success
