@@ -1,21 +1,94 @@
 import { v2 as cloudinary } from "cloudinary";
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      success: false,
-      error: "Method not allowed",
-    });
-  }
+  console.log("=================================");
+  console.log("Cloudinary delete API started");
+  console.log("=================================");
 
   try {
+    // -----------------------------------------------
+    // 1. Check request method
+    // -----------------------------------------------
+
+    if (req.method !== "POST") {
+      return res.status(405).json({
+        success: false,
+        error: "Method not allowed.",
+      });
+    }
+
+    // -----------------------------------------------
+    // 2. Check environment variables
+    // -----------------------------------------------
+
+    const cloudName =
+      process.env.CLOUDINARY_CLOUD_NAME;
+
+    const apiKey =
+      process.env.CLOUDINARY_API_KEY;
+
+    const apiSecret =
+      process.env.CLOUDINARY_API_SECRET;
+
+    console.log(
+      "CLOUDINARY_CLOUD_NAME exists:",
+      Boolean(cloudName)
+    );
+
+    console.log(
+      "CLOUDINARY_API_KEY exists:",
+      Boolean(apiKey)
+    );
+
+    console.log(
+      "CLOUDINARY_API_SECRET exists:",
+      Boolean(apiSecret)
+    );
+
+    if (!cloudName) {
+      return res.status(500).json({
+        success: false,
+        error:
+          "CLOUDINARY_CLOUD_NAME is missing.",
+      });
+    }
+
+    if (!apiKey) {
+      return res.status(500).json({
+        success: false,
+        error:
+          "CLOUDINARY_API_KEY is missing.",
+      });
+    }
+
+    if (!apiSecret) {
+      return res.status(500).json({
+        success: false,
+        error:
+          "CLOUDINARY_API_SECRET is missing.",
+      });
+    }
+
+    // -----------------------------------------------
+    // 3. Configure Cloudinary
+    // -----------------------------------------------
+
+    cloudinary.config({
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+    });
+
+    // -----------------------------------------------
+    // 4. Read request body
+    // -----------------------------------------------
+
     const { publicIds } = req.body || {};
+
+    console.log(
+      "Received public IDs:",
+      publicIds
+    );
 
     if (
       !Array.isArray(publicIds) ||
@@ -23,9 +96,14 @@ export default async function handler(req, res) {
     ) {
       return res.status(400).json({
         success: false,
-        error: "No Cloudinary public IDs provided.",
+        error:
+          "No Cloudinary public IDs provided.",
       });
     }
+
+    // -----------------------------------------------
+    // 5. Delete images
+    // -----------------------------------------------
 
     const results = [];
 
@@ -33,6 +111,11 @@ export default async function handler(req, res) {
       if (!publicId) {
         continue;
       }
+
+      console.log(
+        "Deleting:",
+        publicId
+      );
 
       const result =
         await cloudinary.uploader.destroy(
@@ -43,6 +126,10 @@ export default async function handler(req, res) {
           }
         );
 
+      console.log(
+        "Delete result:",
+        result
+      );
 
       results.push({
         publicId,
@@ -50,21 +137,34 @@ export default async function handler(req, res) {
       });
     }
 
+    // -----------------------------------------------
+    // 6. Return success
+    // -----------------------------------------------
+
     return res.status(200).json({
       success: true,
       results,
     });
   } catch (error) {
     console.error(
-      "Cloudinary deletion failed:",
-      error
+      "================================="
+    );
+
+    console.error(
+      "CLOUDINARY DELETE ERROR"
+    );
+
+    console.error(error);
+
+    console.error(
+      "================================="
     );
 
     return res.status(500).json({
       success: false,
       error:
         error?.message ||
-        "Cloudinary deletion failed.",
+        "Failed to delete Cloudinary images.",
     });
   }
 }
