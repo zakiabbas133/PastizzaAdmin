@@ -10,38 +10,84 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
+
 import { db } from "../firebase/firebase";
-import { deleteImagesFromCloudinary, uploadImageToCloudinary } from "../utils/uploadImage";
 
+import {
+  deleteImagesFromCloudinary,
+  uploadImageToCloudinary,
+} from "../utils/uploadImage";
 
+/**
+ * ----------------------------------------------------
+ * GET ALL DISHES
+ * ----------------------------------------------------
+ */
 export const getDishes = async () => {
   try {
-    const dishesRef = collection(db, "dishes");
+    const dishesRef = collection(
+      db,
+      "dishes"
+    );
 
-    const snapshot = await getDocs(dishesRef);
+    const snapshot =
+      await getDocs(dishesRef);
 
-    const dishes = snapshot.docs.map((document) => ({
-      id: document.id,
-      ...document.data(),
-    }));
+    const dishes = snapshot.docs.map(
+      (document) => ({
+        id: document.id,
+        ...document.data(),
+      })
+    );
 
     return {
       success: true,
       data: dishes,
     };
   } catch (error) {
-    console.error("Error fetching dishes:", error);
+    console.error(
+      "Error fetching dishes:",
+      error
+    );
 
     return {
       success: false,
       data: [],
-      error: error.message || "Failed to fetch dishes.",
+      error:
+        error.message ||
+        "Failed to fetch dishes.",
     };
   }
 };
 
+/**
+ * ----------------------------------------------------
+ * ADD DISH
+ * ----------------------------------------------------
+ */
 export const addDish = async (dish) => {
   try {
+    if (!dish) {
+      return {
+        success: false,
+        error: "Dish data is required.",
+      };
+    }
+
+    if (!dish.id) {
+      return {
+        success: false,
+        error: "Dish ID is required.",
+      };
+    }
+
+    if (!dish.name?.trim()) {
+      return {
+        success: false,
+        error: "Dish name is required.",
+      };
+    }
+
     // ------------------------------------------------
     // 1. Check duplicate dish
     // ------------------------------------------------
@@ -61,7 +107,9 @@ export const addDish = async (dish) => {
     );
 
     const duplicateSnapshot =
-      await getDocs(duplicateQuery);
+      await getDocs(
+        duplicateQuery
+      );
 
     if (!duplicateSnapshot.empty) {
       throw new Error(
@@ -99,7 +147,9 @@ export const addDish = async (dish) => {
 
         uploadedImages.push({
           id: image.id,
+
           src: uploaded.url,
+
           name:
             image.name ||
             image.file.name,
@@ -132,9 +182,11 @@ export const addDish = async (dish) => {
     await setDoc(dishRef, {
       name: dish.name.trim(),
 
-      category: dish.category,
+      category:
+        dish.category || "",
 
-      price: dish.price,
+      price:
+        dish.price || "",
 
       dealPrice:
         dish.dealPrice || null,
@@ -164,7 +216,8 @@ export const addDish = async (dish) => {
         dish.tags || [],
 
       chefRecommendation:
-        dish.chefRecommendation || null,
+        dish.chefRecommendation ||
+        null,
 
       dealItems:
         dish.dealItems || [],
@@ -178,8 +231,12 @@ export const addDish = async (dish) => {
 
     return {
       success: true,
+
       id: dish.id,
-      images: uploadedImages,
+
+      images:
+        uploadedImages,
+
       message:
         "Dish added successfully.",
     };
@@ -191,6 +248,7 @@ export const addDish = async (dish) => {
 
     return {
       success: false,
+
       error:
         error.message ||
         "Failed to add dish.",
@@ -198,7 +256,14 @@ export const addDish = async (dish) => {
   }
 };
 
-export const deleteDish = async (dishId) => {
+/**
+ * ----------------------------------------------------
+ * DELETE DISH
+ * ----------------------------------------------------
+ */
+export const deleteDish = async (
+  dishId
+) => {
   try {
     if (!dishId) {
       return {
@@ -213,22 +278,16 @@ export const deleteDish = async (dishId) => {
       dishId
     );
 
+    // ------------------------------------------------
+    // 1. Get existing dish
+    // ------------------------------------------------
+
     const dishSnapshot =
       await getDoc(dishRef);
 
-    const dish = dishSnapshot.data();
-
-    const publicIds = Array.isArray(dish.images)
-      ? dish.images
-        .map((image) => image?.publicId)
-        .filter(Boolean)
-      : [];
-
-    if (publicIds.length > 0) {
-      await deleteImagesFromCloudinary(
-        publicIds
-      );
-    }
+    // ------------------------------------------------
+    // 2. Check if dish exists BEFORE accessing data
+    // ------------------------------------------------
 
     if (!dishSnapshot.exists()) {
       return {
@@ -237,10 +296,42 @@ export const deleteDish = async (dishId) => {
       };
     }
 
+    const dish =
+      dishSnapshot.data();
+
+    // ------------------------------------------------
+    // 3. Get Cloudinary public IDs
+    // ------------------------------------------------
+
+    const publicIds =
+      Array.isArray(dish.images)
+        ? dish.images
+          .map(
+            (image) =>
+              image?.publicId
+          )
+          .filter(Boolean)
+        : [];
+
+    // ------------------------------------------------
+    // 4. Delete Cloudinary images
+    // ------------------------------------------------
+
+    if (publicIds.length > 0) {
+      await deleteImagesFromCloudinary(
+        publicIds
+      );
+    }
+
+    // ------------------------------------------------
+    // 5. Delete Firestore document
+    // ------------------------------------------------
+
     await deleteDoc(dishRef);
 
     return {
       success: true,
+
       message:
         "Dish and its images deleted successfully.",
     };
@@ -252,6 +343,7 @@ export const deleteDish = async (dishId) => {
 
     return {
       success: false,
+
       error:
         error.message ||
         "Failed to delete dish.",
@@ -259,8 +351,20 @@ export const deleteDish = async (dishId) => {
   }
 };
 
-export const updateDish = async (dishId, dish) => {
+/**
+ * ----------------------------------------------------
+ * UPDATE DISH
+ * ----------------------------------------------------
+ */
+export const updateDish = async (
+  dishId,
+  dish
+) => {
   try {
+    // ------------------------------------------------
+    // 1. Validate
+    // ------------------------------------------------
+
     if (!dishId) {
       return {
         success: false,
@@ -275,13 +379,18 @@ export const updateDish = async (dishId, dish) => {
       };
     }
 
-    const dishRef = doc(db, "dishes", dishId);
+    const dishRef = doc(
+      db,
+      "dishes",
+      dishId
+    );
 
     // ------------------------------------------------
-    // 1. Get existing dish
+    // 2. Get existing dish
     // ------------------------------------------------
 
-    const existingSnapshot = await getDoc(dishRef);
+    const existingSnapshot =
+      await getDoc(dishRef);
 
     if (!existingSnapshot.exists()) {
       return {
@@ -290,68 +399,101 @@ export const updateDish = async (dishId, dish) => {
       };
     }
 
-    const existingDish = existingSnapshot.data();
+    const existingDish =
+      existingSnapshot.data();
 
-    const existingImages = Array.isArray(existingDish.images)
-      ? existingDish.images
-      : [];
+    const existingImages =
+      Array.isArray(
+        existingDish.images
+      )
+        ? existingDish.images
+        : [];
 
     // ------------------------------------------------
-    // 2. Determine whether images are being replaced
+    // 3. Determine whether images changed
+    // ------------------------------------------------
+    //
+    // undefined = don't modify images
+    //
+    // [] = remove all images
+    //
+    // [files] = replace images
+    //
     // ------------------------------------------------
 
     const imagesChanged =
+      dish.images !== undefined &&
       Array.isArray(dish.images);
 
-    let uploadedImages = existingImages;
+    let uploadedImages =
+      existingImages;
+
+    // Keep track of old images so we can delete
+    // them AFTER the new images are uploaded.
+    const previousPublicIds =
+      existingImages
+        .map(
+          (image) =>
+            image?.publicId
+        )
+        .filter(Boolean);
 
     // ------------------------------------------------
-    // 3. Delete previous Cloudinary images
+    // 4. Handle images
     // ------------------------------------------------
 
     if (imagesChanged) {
-      const previousPublicIds = existingImages
-        .map((image) => image?.publicId)
-        .filter(Boolean);
-
-      if (previousPublicIds.length > 0) {
-        const deleteResponse = await fetch(
-          "/api/cloudinary/delete",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json",
-            },
-
-            body: JSON.stringify({
-              publicIds: previousPublicIds,
-            }),
-          }
-        );
-
-        if (!deleteResponse.ok) {
-          throw new Error(
-            "Failed to remove previous images from Cloudinary."
-          );
-        }
-      }
-
-      // ------------------------------------------------
-      // 4. Upload new images
-      // ------------------------------------------------
-
       uploadedImages = [];
 
+      // ----------------------------------------------
+      // Upload new images
+      // ----------------------------------------------
+
       for (const image of dish.images) {
-        if (!(image?.file instanceof File)) {
+        if (
+          !(image?.file instanceof File)
+        ) {
+          if (
+            image?.publicId &&
+            image?.src
+          ) {
+            uploadedImages.push({
+              id: image.id,
+
+              src: image.src,
+
+              name:
+                image.name || "",
+
+              publicId:
+                image.publicId,
+
+              width:
+                image.width ||
+                null,
+
+              height:
+                image.height ||
+                null,
+
+              format:
+                image.format ||
+                null,
+            });
+          }
+
           continue;
         }
 
-        const uploaded = await uploadImageToCloudinary(
-          image.file,
-          dishId
-        );
+        // --------------------------------------------
+        // Upload NEW image
+        // --------------------------------------------
+
+        const uploaded =
+          await uploadImageToCloudinary(
+            image.file,
+            dishId
+          );
 
         uploadedImages.push({
           id: image.id,
@@ -382,11 +524,15 @@ export const updateDish = async (dishId, dish) => {
     // ------------------------------------------------
 
     await updateDoc(dishRef, {
-      name: dish.name?.trim() || "",
+      name:
+        dish.name?.trim() ||
+        "",
 
-      category: dish.category || "",
+      category:
+        dish.category || "",
 
-      price: dish.price || "",
+      price:
+        dish.price || "",
 
       dealPrice:
         dish.dealPrice || null,
@@ -398,7 +544,8 @@ export const updateDish = async (dishId, dish) => {
         dish.featured || false,
 
       shortDescription:
-        dish.shortDescription || "",
+        dish.shortDescription ||
+        "",
 
       description:
         dish.description || "",
@@ -416,7 +563,8 @@ export const updateDish = async (dishId, dish) => {
         dish.tags || [],
 
       chefRecommendation:
-        dish.chefRecommendation || null,
+        dish.chefRecommendation ||
+        null,
 
       dealItems:
         dish.dealItems || [],
@@ -425,12 +573,60 @@ export const updateDish = async (dishId, dish) => {
         serverTimestamp(),
     });
 
+    // ------------------------------------------------
+    // 6. Delete previous Cloudinary images
+    //
+    // Only do this when the image array was changed.
+    // ------------------------------------------------
+
+    if (
+      imagesChanged &&
+      previousPublicIds.length > 0
+    ) {
+      try {
+        await deleteImagesFromCloudinary(
+          previousPublicIds
+        );
+      } catch (deleteError) {
+        // Firestore has already been updated with
+        // the new images.
+        //
+        // Don't report the whole update as failed
+        // because the dish itself was successfully
+        // updated.
+        console.error(
+          "New images saved, but old Cloudinary images could not be deleted:",
+          deleteError
+        );
+
+        return {
+          success: true,
+
+          id: dishId,
+
+          images:
+            uploadedImages,
+
+          warning:
+            "Dish updated successfully, but some previous Cloudinary images could not be deleted.",
+
+          message:
+            "Dish updated successfully.",
+        };
+      }
+    }
+
+    // ------------------------------------------------
+    // 7. Success
+    // ------------------------------------------------
+
     return {
       success: true,
 
       id: dishId,
 
-      images: uploadedImages,
+      images:
+        uploadedImages,
 
       message:
         "Dish updated successfully.",

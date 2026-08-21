@@ -82,11 +82,6 @@ export const deleteImagesFromCloudinary = async (
     };
   }
 
-  console.log(
-    "Deleting Cloudinary public IDs:",
-    publicIds
-  );
-
   const response = await fetch(
     "/api/cloudinary/delete",
     {

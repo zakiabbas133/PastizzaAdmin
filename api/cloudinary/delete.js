@@ -1,10 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 
 export default async function handler(req, res) {
-  console.log("=================================");
-  console.log("Cloudinary delete API started");
-  console.log("=================================");
-
   try {
     // -----------------------------------------------
     // 1. Check request method
@@ -24,21 +20,6 @@ export default async function handler(req, res) {
     const cloudName = "hwsulryt";
     const apiKey = "276131442533931";
     const apiSecret = "MZrST220JS0BwJJpU_PfEMpIsW4";
-
-    console.log(
-      "CLOUDINARY_CLOUD_NAME exists:",
-      Boolean(cloudName)
-    );
-
-    console.log(
-      "CLOUDINARY_API_KEY exists:",
-      Boolean(apiKey)
-    );
-
-    console.log(
-      "CLOUDINARY_API_SECRET exists:",
-      Boolean(apiSecret)
-    );
 
     if (!cloudName) {
       return res.status(500).json({
@@ -80,11 +61,6 @@ export default async function handler(req, res) {
 
     const { publicIds } = req.body || {};
 
-    console.log(
-      "Received public IDs:",
-      publicIds
-    );
-
     if (
       !Array.isArray(publicIds) ||
       publicIds.length === 0
@@ -107,23 +83,12 @@ export default async function handler(req, res) {
         continue;
       }
 
-      console.log(
-        "Deleting:",
-        publicId
-      );
-
-      const result =
-        await cloudinary.uploader.destroy(
-          publicId,
-          {
-            resource_type: "image",
-            invalidate: true,
-          }
-        );
-
-      console.log(
-        "Delete result:",
-        result
+      const result = await cloudinary.uploader.destroy(
+        publicId,
+        {
+          resource_type: "image",
+          invalidate: true,
+        }
       );
 
       results.push({
