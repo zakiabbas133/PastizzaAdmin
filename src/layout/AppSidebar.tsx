@@ -7,7 +7,7 @@ import {
   HorizontaLDots,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
-import { ForkKnifeCrossedIcon, ListSortDescending, LucideSettings2, MonitorCog, SquareStack } from "lucide-react";
+import { ForkKnifeCrossedIcon, ListSortDescending, MonitorCog, SquareStack } from "lucide-react";
 
 type NavItem = {
   name: string;
