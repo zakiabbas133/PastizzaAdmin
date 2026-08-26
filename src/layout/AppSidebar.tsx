@@ -7,7 +7,7 @@ import {
   HorizontaLDots,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
-import { ForkKnifeCrossedIcon, ListSortDescending, SquareStack } from "lucide-react";
+import { ForkKnifeCrossedIcon, ListSortDescending, LucideSettings2, MonitorCog, SquareStack } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -53,6 +53,11 @@ const navItems: NavItem[] = [
     icon: <ListSortDescending />,
     name: "Category",
     path: "/category",
+  },
+  {
+    icon: <MonitorCog />,
+    name: "Website Settings",
+    path: "/website-settings",
   },
 ];
 
