@@ -227,13 +227,14 @@ export default function MenuItems() {
                             </p>
                         </div>
 
-                        <button
+                        <Link
+                            to={'/add-menu'}
                             type="button"
                             className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-600"
                         >
                             <Plus size={18} />
                             Add Menu Item
-                        </button>
+                        </Link>
                     </div>
                 </div>
 

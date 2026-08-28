@@ -63,9 +63,6 @@ export default function DealDetails() {
             : 0;
 
     const handleDelete = () => {
-        /*
-         * Replace with your Firestore delete call.
-         */
         console.log("Delete deal:", deal.id);
 
         setDeleteOpen(false);

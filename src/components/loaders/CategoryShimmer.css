@@ -1,0 +1,44 @@
+@keyframes shimmer {
+  from {
+    transform: translateX(-150%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+.animate-shimmer {
+  position: absolute;
+  inset: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 15%,
+    rgba(255, 255, 255, 0.25) 35%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.25) 65%,
+    rgba(255, 255, 255, 0.05) 85%,
+    transparent 100%
+  );
+  animation: shimmer 1.8s linear infinite;
+  will-change: transform;
+  pointer-events: none;
+} /* Dark mode */
+.dark .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.02) 15%,
+    rgba(255, 255, 255, 0.05) 35%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 65%,
+    rgba(255, 255, 255, 0.02) 85%,
+    transparent 100%
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer {
+    animation: none;
+  }
+}

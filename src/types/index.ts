@@ -66,6 +66,9 @@ export interface CategoryMeta {
   label: string;
   image?: string;
   description?: string;
+  displayOrder?: number;
+  isActive?: boolean;
+  
 }
 
 export interface CartItem {
