@@ -1,8 +1,6 @@
 import { api } from "./api";
 import type { ApiResponse } from "../types/category";
-import {
-  WebsiteSettings,
-} from "../types/websiteSettings";
+import { WebsiteSettings } from "../types/websiteSettings";
 
 export const websiteSettingsApi = api.injectEndpoints({
   endpoints: (builder) => ({
@@ -18,13 +16,6 @@ export const websiteSettingsApi = api.injectEndpoints({
       transformResponse: (response: ApiResponse<WebsiteSettings>) => {
         return response.data;
       },
-
-      providesTags: [
-        {
-          type: "WebsiteSettings",
-          id: "SETTINGS",
-        },
-      ],
     }),
 
     // ==========================================
@@ -52,5 +43,7 @@ export const websiteSettingsApi = api.injectEndpoints({
   overrideExisting: false,
 });
 
-export const { useGetWebsiteSettingsQuery, useAddOrUpdateWebsiteSettingsMutation } =
-  websiteSettingsApi;
+export const {
+  useGetWebsiteSettingsQuery,
+  useAddOrUpdateWebsiteSettingsMutation,
+} = websiteSettingsApi;

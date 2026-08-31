@@ -18,6 +18,9 @@ import {
   useAddOrUpdateWebsiteSettingsMutation,
   useGetWebsiteSettingsQuery,
 } from "../../services/websiteSettingsApi";
+import Toast from "../../components/toast/Toast";
+import { baseUrl } from "../../services/api";
+import DashboardLoader from "../../components/loaders/DashboardLoader";
 
 /* ========================================================================
    TYPES
@@ -25,6 +28,8 @@ import {
 
 interface WebsiteSettingsData {
   logo: string;
+  sliderImages: string[];
+  video: string;
   facebookUrl: string;
   instagramUrl: string;
   whatsappUrl: string;
@@ -73,14 +78,33 @@ const EMPTY_LOCATION_FORM: LocationForm = {
   longitude: "",
 };
 
-const INITIAL_WEBSITE_SETTINGS: WebsiteSettingsData = {
-  logo: "",
-  facebookUrl: "",
-  instagramUrl: "",
-  whatsappUrl: "",
-  whatsappMessage: "Hello! I would like to know more about your menu.",
-  email: "",
-};
+const DEFAULT_WHATSAPP_MESSAGE =
+  "Hello! I would like to know more about your menu.";
+
+const ALLOWED_SLIDER_IMAGE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+];
+
+const ALLOWED_LOGO_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+  "image/svg+xml",
+];
+
+const ALLOWED_VIDEO_TYPES = [
+  "video/mp4",
+  "video/webm",
+  "video/ogg",
+  "video/quicktime",
+];
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
 
 /* ========================================================================
    MAIN COMPONENT
@@ -93,34 +117,76 @@ export default function WebsiteSettings() {
     whatsapp: "https://wa.me/",
   } as const;
 
+  /*
+   * The RTK Query endpoint can expose WebsiteSettings while this component
+   * expects WebsiteSettingsData. Normalize the response here so the rest
+   * of the component always works with one consistent type.
+   */
   const {
-    data = {},
-    isLoading: categoriesLoading,
+    data: apiData,
+    isLoading: websiteSettingsLoading,
     refetch,
   } = useGetWebsiteSettingsQuery();
-  console.log(data)
+
+  const data = apiData as Partial<WebsiteSettingsData> | undefined;
+
+  console.log(data);
+
   const [addOrUpdateWebsiteSettings, { isLoading: websiteSettingLoading }] =
     useAddOrUpdateWebsiteSettingsMutation();
 
   /* --------------------------------------------------------------------
        WEBSITE SETTINGS
-    -------------------------------------------------------------------- */
+  -------------------------------------------------------------------- */
 
-  const [websiteSettings, setWebsiteSettings] = useState<WebsiteSettingsData>(
-    INITIAL_WEBSITE_SETTINGS,
-  );
+  const [websiteSettings, setWebsiteSettings] = useState<WebsiteSettingsData>({
+    logo: "",
+    sliderImages: [],
+    video: "",
+    facebookUrl: "",
+    instagramUrl: "",
+    whatsappUrl: "",
+    whatsappMessage: DEFAULT_WHATSAPP_MESSAGE,
+    email: "",
+  });
+
+  /* --------------------------------------------------------------------
+       LOGO
+  -------------------------------------------------------------------- */
 
   const [logoPreview, setLogoPreview] = useState<string>("");
-
   const [logoFile, setLogoFile] = useState<File | null>(null);
+
+  /* --------------------------------------------------------------------
+       SLIDER IMAGES
+       
+       sliderImages  = existing server images that should be KEPT
+       sliderFiles   = newly selected files
+       sliderPreviews = previews corresponding to sliderFiles
+  -------------------------------------------------------------------- */
+
+  const [sliderImages, setSliderImages] = useState<string[]>([]);
+  const [sliderFiles, setSliderFiles] = useState<File[]>([]);
+  const [sliderPreviews, setSliderPreviews] = useState<string[]>([]);
+
+  /* --------------------------------------------------------------------
+       VIDEO
+  -------------------------------------------------------------------- */
+
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string>("");
 
   const [websiteErrors, setWebsiteErrors] = useState<FormErrors>({});
 
-  const [isSavingWebsite, setIsSavingWebsite] = useState<boolean>(false);
-
   const logoInputRef = useRef<HTMLInputElement | null>(null);
-
+  const sliderInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sliderImagesDirtyRef = useRef(false);
+
+  /* --------------------------------------------------------------------
+       TOAST
+  -------------------------------------------------------------------- */
 
   const [toast, setToast] = useState<{
     show: boolean;
@@ -134,7 +200,7 @@ export default function WebsiteSettings() {
 
   /* --------------------------------------------------------------------
        LOCATIONS
-    -------------------------------------------------------------------- */
+  -------------------------------------------------------------------- */
 
   const [locations, setLocations] = useState<Location[]>(initialLocations);
 
@@ -158,22 +224,84 @@ export default function WebsiteSettings() {
 
   /* --------------------------------------------------------------------
        SUCCESS MODAL
-    -------------------------------------------------------------------- */
+  -------------------------------------------------------------------- */
 
   const [successModal, setSuccessModal] = useState<SuccessModalData | null>(
     null,
   );
+
+  /* ====================================================================
+       LOAD WEBSITE SETTINGS
+  ==================================================================== */
+
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+
+    let existingSliderImages: string[] = [];
+
+    try {
+      if (data.sliderImages) {
+        const parsed = JSON.parse(data.sliderImages as any);
+
+        if (Array.isArray(parsed)) {
+          existingSliderImages = parsed.filter(Boolean);
+        }
+      }
+    } catch {
+      existingSliderImages = [];
+    }
+
+    setWebsiteSettings((previous) => ({
+      ...previous,
+      logo: data.logo ?? "",
+      sliderImages: existingSliderImages,
+      video: data.video ?? "",
+      facebookUrl: data.facebookUrl ?? "",
+      instagramUrl: data.instagramUrl ?? "",
+      whatsappUrl: data.whatsappUrl ?? "",
+      whatsappMessage: data.whatsappMessage || DEFAULT_WHATSAPP_MESSAGE,
+      email: data.email ?? "",
+    }));
+
+    setSliderImages(existingSliderImages);
+
+    /*
+     * Only restore the server video if there isn't a local video
+     * currently being edited.
+     */
+  }, [data]);
+
+  /* ====================================================================
+       CLEANUP ON UNMOUNT
+  ==================================================================== */
 
   useEffect(() => {
     return () => {
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
       }
+
+      if (logoPreview) {
+        URL.revokeObjectURL(logoPreview);
+      }
+
+      sliderPreviews.forEach((preview) => {
+        URL.revokeObjectURL(preview);
+      });
+
+      if (videoPreview) {
+        URL.revokeObjectURL(videoPreview);
+      }
     };
   }, []);
 
-  const showToast = (message: string, type: "success" | "error") => {
-    // Clear previous timeout
+  /* ====================================================================
+       TOAST
+  ==================================================================== */
+
+  const showToast = (message: string, type: "success" | "error"): void => {
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
     }
@@ -194,7 +322,7 @@ export default function WebsiteSettings() {
     }, 3000);
   };
 
-  const hideToast = () => {
+  const hideToast = (): void => {
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
       toastTimeoutRef.current = null;
@@ -207,55 +335,191 @@ export default function WebsiteSettings() {
   };
 
   /* ====================================================================
-       WEBSITE LOGO
-    ==================================================================== */
+       SLIDER IMAGES
+  ==================================================================== */
 
-  function getWhatsAppNumber(url: string): string {
-    const prefix = "https://wa.me/";
+  const handleSliderImagesChange = (
+    event: ChangeEvent<HTMLInputElement>,
+  ): void => {
+    const files = Array.from(event.target.files ?? []);
 
-    if (!url) {
-      return "";
+    /*
+     * Always reset the input.
+     *
+     * This allows the user to select the same file again after removing it.
+     */
+    event.target.value = "";
+
+    if (files.length === 0) {
+      return;
     }
 
-    if (url.startsWith(prefix)) {
-      return url.slice(prefix.length);
+    const validFiles: File[] = [];
+
+    for (const file of files) {
+      if (!ALLOWED_SLIDER_IMAGE_TYPES.includes(file.type)) {
+        showToast(
+          `${file.name}: Only PNG, JPG, JPEG, or WEBP images are allowed.`,
+          "error",
+        );
+        continue;
+      }
+
+      if (file.size > MAX_IMAGE_SIZE) {
+        showToast(`${file.name}: Image must be smaller than 5MB.`, "error");
+        continue;
+      }
+
+      validFiles.push(file);
     }
 
-    return url.replace(/^https?:\/\/wa\.me\//i, "").replace(/\D/g, "");
-  }
+    if (validFiles.length === 0) {
+      return;
+    }
 
-  const handleLogoChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    /*
+     * IMPORTANT:
+     *
+     * Do NOT do:
+     *
+     * setSliderImages([])
+     *
+     * because sliderImages contains existing server images that the user
+     * has decided to keep.
+     *
+     * New files are simply appended.
+     */
+    const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
+
+    setSliderFiles((previous) => [...previous, ...validFiles]);
+
+    setSliderPreviews((previous) => [...previous, ...newPreviews]);
+  };
+
+  const removeExistingSliderImage = (index: number): void => {
+    sliderImagesDirtyRef.current = true;
+
+    setSliderImages((previous) =>
+      previous.filter((_, imageIndex) => imageIndex !== index),
+    );
+  };
+
+  const removeNewSliderImage = (index: number): void => {
+    setSliderPreviews((previous) => {
+      const preview = previous[index];
+
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+
+      return previous.filter((_, previewIndex) => previewIndex !== index);
+    });
+
+    setSliderFiles((previous) =>
+      previous.filter((_, fileIndex) => fileIndex !== index),
+    );
+  };
+
+  /* ====================================================================
+       VIDEO
+  ==================================================================== */
+
+  const handleVideoChange = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
+
+    event.target.value = "";
 
     if (!file) {
       return;
     }
 
-    const allowedTypes = [
-      "image/png",
-      "image/jpeg",
-      "image/jpg",
-      "image/webp",
-      "image/svg+xml",
-    ];
+    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+      showToast("Only MP4, WEBM, OGG, or MOV videos are allowed.", "error");
 
-    if (!allowedTypes.includes(file.type)) {
+      return;
+    }
+
+    if (file.size > MAX_VIDEO_SIZE) {
+      showToast("Video must be smaller than 50MB.", "error");
+
+      return;
+    }
+
+    /*
+     * Revoke the previous local preview if there was one.
+     */
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
+    }
+
+    const preview = URL.createObjectURL(file);
+
+    setVideoFile(file);
+    setVideoPreview(preview);
+
+    /*
+     * Clear any previous server video from the local form state.
+     * The backend will replace it with the new VideoFile.
+     */
+    setWebsiteSettings((previous) => ({
+      ...previous,
+      video: "",
+    }));
+  };
+
+  const removeVideo = (): void => {
+    /*
+     * Remove newly selected local video.
+     */
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
+    }
+
+    setVideoPreview("");
+    setVideoFile(null);
+
+    /*
+     * Mark the existing server video for deletion.
+     */
+
+    setWebsiteSettings((previous) => ({
+      ...previous,
+      video: "",
+    }));
+
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
+    }
+  };
+
+  /* ====================================================================
+       WEBSITE LOGO
+  ==================================================================== */
+
+  const handleLogoChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
+
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (!ALLOWED_LOGO_TYPES.includes(file.type)) {
       setWebsiteErrors((previous) => ({
         ...previous,
         logo: "Only PNG, JPG, JPEG, WEBP, or SVG images are allowed.",
       }));
 
-      event.target.value = "";
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_IMAGE_SIZE) {
       setWebsiteErrors((previous) => ({
         ...previous,
         logo: "Logo image must be smaller than 5MB.",
       }));
 
-      event.target.value = "";
       return;
     }
 
@@ -299,6 +563,24 @@ export default function WebsiteSettings() {
     }
   };
 
+  /* ====================================================================
+       SOCIAL HELPERS
+  ==================================================================== */
+
+  function getWhatsAppNumber(url: string): string {
+    const prefix = SOCIAL_PREFIXES.whatsapp;
+
+    if (!url) {
+      return "";
+    }
+
+    if (url.startsWith(prefix)) {
+      return url.slice(prefix.length);
+    }
+
+    return url.replace(/^https?:\/\/wa\.me\//i, "").replace(/\D/g, "");
+  }
+
   function getSocialIdentifier(
     value: string,
     platform: "facebook" | "instagram",
@@ -311,16 +593,10 @@ export default function WebsiteSettings() {
 
     const prefix = SOCIAL_PREFIXES[platform];
 
-    // Already in our expected format.
     if (trimmed.startsWith(prefix)) {
       return trimmed.slice(prefix.length).trim();
     }
 
-    /*
-     * Support previously saved values such as:
-     * https://facebook.com/yourpage
-     * https://instagram.com/yourpage
-     */
     try {
       const url = new URL(trimmed);
       const hostname = url.hostname.toLowerCase();
@@ -348,7 +624,7 @@ export default function WebsiteSettings() {
         }
       }
     } catch {
-      // Invalid URL. Return the original value so validation fails.
+      // Invalid URL. Validation will handle it.
     }
 
     return trimmed;
@@ -364,14 +640,6 @@ export default function WebsiteSettings() {
       return false;
     }
 
-    /*
-     * Facebook:
-     * - Page/profile username
-     * - Facebook page ID
-     *
-     * Instagram:
-     * - Instagram username
-     */
     if (platform === "facebook") {
       return (
         /^[a-zA-Z0-9.]+$/.test(identifier) &&
@@ -390,11 +658,6 @@ export default function WebsiteSettings() {
   function isValidWhatsAppNumber(value: string): boolean {
     const digits = value.replace(/\D/g, "");
 
-    /*
-     * International phone numbers:
-     * Minimum 7 digits
-     * Maximum 15 digits
-     */
     return digits.length >= 7 && digits.length <= 15;
   }
 
@@ -409,14 +672,6 @@ export default function WebsiteSettings() {
       return false;
     }
 
-    /*
-     * Prevent:
-     * - spaces
-     * - missing @
-     * - missing domain
-     * - missing TLD
-     * - consecutive dots
-     */
     if (/\s/.test(email)) {
       return false;
     }
@@ -432,22 +687,18 @@ export default function WebsiteSettings() {
 
   /* ====================================================================
        WEBSITE VALIDATION
-    ==================================================================== */
+  ==================================================================== */
 
   const validateWebsiteSettings = (): boolean => {
     const errors: FormErrors = {};
 
-    /* ============================================================
-     LOGO
-  ============================================================ */
+    /* LOGO */
 
     if (!websiteSettings.logo.trim() && !logoFile && !logoPreview) {
       errors.logo = "Website logo is required.";
     }
 
-    /* ============================================================
-     FACEBOOK
-  ============================================================ */
+    /* FACEBOOK */
 
     const facebookIdentifier = getSocialIdentifier(
       websiteSettings.facebookUrl,
@@ -460,9 +711,7 @@ export default function WebsiteSettings() {
       errors.facebookUrl = "Facebook is invalid.";
     }
 
-    /* ============================================================
-     INSTAGRAM
-  ============================================================ */
+    /* INSTAGRAM */
 
     const instagramIdentifier = getSocialIdentifier(
       websiteSettings.instagramUrl,
@@ -475,9 +724,7 @@ export default function WebsiteSettings() {
       errors.instagramUrl = "Instagram is invalid.";
     }
 
-    /* ============================================================
-     WHATSAPP
-  ============================================================ */
+    /* WHATSAPP */
 
     const whatsappNumber = getWhatsAppNumber(websiteSettings.whatsappUrl);
 
@@ -487,9 +734,7 @@ export default function WebsiteSettings() {
       errors.whatsappUrl = "WhatsApp is invalid.";
     }
 
-    /* ============================================================
-     WHATSAPP MESSAGE
-  ============================================================ */
+    /* WHATSAPP MESSAGE */
 
     const whatsappMessage = websiteSettings.whatsappMessage.trim();
 
@@ -499,9 +744,7 @@ export default function WebsiteSettings() {
       errors.whatsappMessage = "WhatsApp message is invalid.";
     }
 
-    /* ============================================================
-     EMAIL
-  ============================================================ */
+    /* EMAIL */
 
     const email = websiteSettings.email.trim();
 
@@ -516,12 +759,14 @@ export default function WebsiteSettings() {
     return Object.keys(errors).length === 0;
   };
 
+  /* ====================================================================
+       SAVE WEBSITE SETTINGS
+  ==================================================================== */
+
   const handleSaveWebsiteSettings = async (): Promise<void> => {
     if (!validateWebsiteSettings()) {
       return;
     }
-
-    setIsSavingWebsite(true);
 
     try {
       const formData = new FormData();
@@ -539,37 +784,121 @@ export default function WebsiteSettings() {
 
       formData.append("Email", websiteSettings.email.trim());
 
-      // Only append when a new logo was selected
+      /* ==============================================================
+         LOGO
+      ============================================================== */
+
       if (logoFile) {
         formData.append("LogoFile", logoFile);
       }
 
+      /* ==============================================================
+         EXISTING SLIDER IMAGES TO KEEP
+         
+         This contains ONLY the server images that the user has not
+         removed.
+      ============================================================== */
+
+      formData.append("SliderImages", JSON.stringify(sliderImages));
+
+      /* ==============================================================
+         NEW SLIDER IMAGES
+         
+         These are the files that were selected in this session.
+      ============================================================== */
+
+      sliderFiles.forEach((file) => {
+        formData.append("SliderImageFiles", file);
+      });
+
+      /* ==============================================================
+         VIDEO
+      ============================================================== */
+
+      if (videoFile) {
+        formData.append("VideoFile", videoFile);
+      }
+
       const response = await addOrUpdateWebsiteSettings(formData).unwrap();
 
-      if (response.success) {
-        setSuccessModal({
-          title: "Settings Saved!",
-          message: "Your website settings have been updated successfully.",
-        });
+      if (!response.success) {
+        showToast(
+          response.message || "Failed to save website settings.",
+          "error",
+        );
 
-        // Clear the selected file after successful upload
-        setLogoFile(null);
+        return;
       }
+
+      /* ==============================================================
+         SUCCESS
+      ============================================================== */
+
+      setSuccessModal({
+        title: "Settings Saved!",
+        message: "Your website settings have been updated successfully.",
+      });
+
+      /* ==============================================================
+         CLEAR LOGO FILE
+      ============================================================== */
+
+      setLogoFile(null);
+
+      if (logoInputRef.current) {
+        logoInputRef.current.value = "";
+      }
+
+      /* ==============================================================
+         CLEAR NEW SLIDER FILES/PREVIEWS
+      ============================================================== */
+
+      sliderPreviews.forEach((preview) => {
+        URL.revokeObjectURL(preview);
+      });
+
+      setSliderFiles([]);
+      setSliderPreviews([]);
+
+      if (sliderInputRef.current) {
+        sliderInputRef.current.value = "";
+      }
+
+      /* ==============================================================
+         CLEAR VIDEO FILE/PREVIEW
+      ============================================================== */
+
+      if (videoPreview) {
+        URL.revokeObjectURL(videoPreview);
+      }
+
+      setVideoFile(null);
+      setVideoPreview("");
+
+      if (videoInputRef.current) {
+        videoInputRef.current.value = "";
+      }
+
+      /* ==============================================================
+         REFRESH FROM SERVER
+      ============================================================== */
+
+      await refetch();
     } catch (error) {
       console.error("Error saving website settings:", error);
-      showToast("Failed to create category. Please try again.", "error");
+
+      showToast("Failed to save website settings. Please try again.", "error");
+
       setWebsiteErrors((previous) => ({
         ...previous,
         general: "Something went wrong while saving website settings.",
       }));
-    } finally {
-      setIsSavingWebsite(false);
     }
   };
 
   /* ====================================================================
        LOCATION MODAL
-    ==================================================================== */
+  ==================================================================== */
 
   const openAddLocation = (): void => {
     setEditingLocationId(null);
@@ -592,8 +921,8 @@ export default function WebsiteSettings() {
       phone: location.phone,
       whatsapp: String(location.whatsapp),
       openingHours: [...location.openingHours, "", "", "", ""].slice(0, 7),
-      latitude: String(location?.coordinates?.lat),
-      longitude: String(location?.coordinates?.lng),
+      latitude: String(location?.coordinates?.lat ?? ""),
+      longitude: String(location?.coordinates?.lng ?? ""),
     });
 
     setLocationErrors({});
@@ -614,21 +943,16 @@ export default function WebsiteSettings() {
 
   /* ====================================================================
        LOCATION VALIDATION
-    ==================================================================== */
+  ==================================================================== */
 
   const validateLocation = (): boolean => {
     const errors: FormErrors = {};
 
     const name = locationForm.name.trim();
-
     const address = locationForm.address.trim();
-
     const phone = locationForm.phone.trim();
-
     const whatsapp = locationForm.whatsapp.trim();
-
     const latitude = locationForm.latitude.trim();
-
     const longitude = locationForm.longitude.trim();
 
     /* NAME */
@@ -700,7 +1024,7 @@ export default function WebsiteSettings() {
 
   /* ====================================================================
        SAVE LOCATION
-    ==================================================================== */
+  ==================================================================== */
 
   const handleSaveLocation = (): void => {
     if (!validateLocation()) {
@@ -768,7 +1092,7 @@ export default function WebsiteSettings() {
 
   /* ====================================================================
        DELETE LOCATION
-    ==================================================================== */
+  ==================================================================== */
 
   const handleDeleteLocation = (): void => {
     if (!deleteLocation) {
@@ -794,7 +1118,7 @@ export default function WebsiteSettings() {
 
   /* ====================================================================
        OPENING HOURS
-    ==================================================================== */
+  ==================================================================== */
 
   const updateOpeningHour = (index: number, value: string): void => {
     setLocationForm((previous) => ({
@@ -805,21 +1129,31 @@ export default function WebsiteSettings() {
     }));
   };
 
-  const getWebsiteSettings = async () => {
-    const response = null;
-  };
-
-  useEffect(() => {
-    getWebsiteSettings();
-  }, []);
-
   /* ====================================================================
        RENDER
-    ==================================================================== */
+  ==================================================================== */
+
+  const hasLogo = Boolean(logoPreview) || Boolean(websiteSettings.logo);
+  const hasVideo = Boolean(videoPreview) || Boolean(websiteSettings.video);
+
+  if (websiteSettingsLoading) {
+    return <DashboardLoader message="Loading website settings..." />;
+  }
 
   return (
     <>
       <div className="mx-auto w-full max-w-7xl space-y-6">
+        {/* =====================================================
+            TOAST
+        ===================================================== */}
+
+        <Toast
+          show={toast.show}
+          message={toast.message}
+          type={toast.type}
+          onClose={hideToast}
+        />
+
         {/* PAGE HEADER */}
 
         <div className="flex flex-col gap-1">
@@ -834,8 +1168,8 @@ export default function WebsiteSettings() {
         </div>
 
         {/* ========================================================
-                    WEBSITE INFORMATION
-                ======================================================== */}
+            WEBSITE INFORMATION
+        ======================================================== */}
 
         <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="border-b border-gray-200 px-5 py-5 lg:px-6 dark:border-gray-800">
@@ -857,7 +1191,9 @@ export default function WebsiteSettings() {
           </div>
 
           <div className="space-y-6 p-5 lg:p-6">
-            {/* LOGO */}
+            {/* ====================================================
+                LOGO
+            ==================================================== */}
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -867,9 +1203,9 @@ export default function WebsiteSettings() {
 
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
-                  {logoPreview || websiteSettings.logo ? (
+                  {hasLogo ? (
                     <img
-                      src={logoPreview || websiteSettings.logo}
+                      src={logoPreview || `${baseUrl}${websiteSettings.logo}`}
                       alt="Website logo"
                       className="h-full w-full object-contain p-3"
                     />
@@ -887,12 +1223,10 @@ export default function WebsiteSettings() {
                     >
                       <Upload size={16} />
 
-                      {logoPreview || websiteSettings.logo
-                        ? "Change Logo"
-                        : "Select Logo"}
+                      {hasLogo ? "Change Logo" : "Select Logo"}
                     </button>
 
-                    {(logoPreview || websiteSettings.logo) && (
+                    {hasLogo && (
                       <button
                         type="button"
                         onClick={removeLogo}
@@ -925,7 +1259,9 @@ export default function WebsiteSettings() {
               </div>
             </div>
 
-            {/* SOCIAL / CONTACT */}
+            {/* ====================================================
+                SOCIAL / CONTACT
+            ==================================================== */}
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               {/* FACEBOOK */}
@@ -942,12 +1278,10 @@ export default function WebsiteSettings() {
                       : "border-gray-300 focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/10 dark:border-gray-700"
                   } dark:bg-gray-900`}
                 >
-                  {/* FIXED PREFIX */}
                   <div className="flex shrink-0 items-center border-r border-gray-200 bg-gray-50 px-3 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
                     https://m.me/
                   </div>
 
-                  {/* USERNAME / PAGE ID */}
                   <input
                     type="text"
                     value={getSocialIdentifier(
@@ -970,8 +1304,12 @@ export default function WebsiteSettings() {
                       }));
 
                       setWebsiteErrors((previous) => {
-                        const next = { ...previous };
+                        const next = {
+                          ...previous,
+                        };
+
                         delete next.facebookUrl;
+
                         return next;
                       });
                     }}
@@ -996,12 +1334,10 @@ export default function WebsiteSettings() {
                       : "border-gray-300 focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/10 dark:border-gray-700"
                   } dark:bg-gray-900`}
                 >
-                  {/* FIXED PREFIX */}
                   <div className="flex shrink-0 items-center border-r border-gray-200 bg-gray-50 px-3 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
                     https://ig.me/m/
                   </div>
 
-                  {/* USERNAME */}
                   <input
                     type="text"
                     value={getSocialIdentifier(
@@ -1021,8 +1357,12 @@ export default function WebsiteSettings() {
                       }));
 
                       setWebsiteErrors((previous) => {
-                        const next = { ...previous };
+                        const next = {
+                          ...previous,
+                        };
+
                         delete next.instagramUrl;
+
                         return next;
                       });
                     }}
@@ -1033,13 +1373,13 @@ export default function WebsiteSettings() {
                 </div>
               </Field>
 
-              {/* WHATSAPP URL */}
+              {/* WHATSAPP */}
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  WhatsApp URL
-                </label>
-
+              <Field
+                label="WhatsApp URL"
+                required
+                error={websiteErrors.whatsappUrl}
+              >
                 <div
                   className={`flex h-11 w-full overflow-hidden rounded-lg border bg-transparent text-sm transition ${
                     websiteErrors.whatsappUrl
@@ -1047,13 +1387,9 @@ export default function WebsiteSettings() {
                       : "border-gray-300 focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/10 dark:border-gray-700"
                   } dark:bg-gray-900`}
                 >
-                  {/* FIXED PREFIX */}
-
                   <div className="flex shrink-0 items-center border-r border-gray-200 bg-gray-50 px-3 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
                     https://wa.me/
                   </div>
-
-                  {/* NUMBER */}
 
                   <input
                     type="tel"
@@ -1064,7 +1400,9 @@ export default function WebsiteSettings() {
 
                       setWebsiteSettings((previous) => ({
                         ...previous,
-                        whatsappUrl: number ? `https://wa.me/${number}` : "",
+                        whatsappUrl: number
+                          ? `${SOCIAL_PREFIXES.whatsapp}${number}`
+                          : "",
                       }));
 
                       setWebsiteErrors((previous) => {
@@ -1086,13 +1424,7 @@ export default function WebsiteSettings() {
                   Enter the WhatsApp number with country code, without + or
                   spaces.
                 </p>
-
-                {websiteErrors.whatsappUrl && (
-                  <p className="mt-1 text-xs text-error-500">
-                    {websiteErrors.whatsappUrl}
-                  </p>
-                )}
-              </div>
+              </Field>
 
               {/* EMAIL */}
 
@@ -1119,7 +1451,9 @@ export default function WebsiteSettings() {
               </Field>
             </div>
 
-            {/* WHATSAPP MESSAGE */}
+            {/* ====================================================
+                WHATSAPP MESSAGE
+            ==================================================== */}
 
             <Field
               label="WhatsApp Message"
@@ -1135,7 +1469,7 @@ export default function WebsiteSettings() {
                     whatsappMessage: event.target.value,
                   }))
                 }
-                placeholder="Hello! I would like to know more about your menu."
+                placeholder={DEFAULT_WHATSAPP_MESSAGE}
                 className={textareaClass}
               />
 
@@ -1157,6 +1491,233 @@ export default function WebsiteSettings() {
                 </span>
               </div>
             </Field>
+
+            {/* ====================================================
+                SLIDER IMAGES
+            ==================================================== */}
+
+            <div className="border-t border-gray-200 pt-6 dark:border-gray-800">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Slider Images
+                </label>
+
+                <p className="mt-1 text-xs text-gray-400">
+                  Add multiple images for your website slider. You can remove
+                  existing images or add new ones.
+                </p>
+              </div>
+
+              {/* EXISTING + NEW IMAGES */}
+
+              {(sliderImages.length > 0 || sliderPreviews.length > 0) && (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {/* EXISTING */}
+
+                  {sliderImages.map((image, index) => (
+                    <div
+                      key={`existing-${image}-${index}`}
+                      className="group relative aspect-video overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+                    >
+                      <img
+                        src={`${baseUrl}${image}`}
+                        alt={`Slider ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+
+                      <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/30" />
+
+                      <button
+                        type="button"
+                        onClick={() => removeExistingSliderImage(index)}
+                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-error-500 opacity-100 shadow-sm transition hover:bg-white sm:opacity-0 sm:group-hover:opacity-100"
+                        aria-label={`Remove slider image ${index + 1}`}
+                      >
+                        <X size={16} />
+                      </button>
+
+                      <span className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-[10px] font-medium text-white">
+                        Existing
+                      </span>
+                    </div>
+                  ))}
+
+                  {/* NEW */}
+
+                  {sliderPreviews.map((preview, index) => (
+                    <div
+                      key={`new-${preview}-${index}`}
+                      className="group relative aspect-video overflow-hidden rounded-xl border border-brand-200 bg-brand-50 dark:border-brand-500/30 dark:bg-brand-500/10"
+                    >
+                      <img
+                        src={preview}
+                        alt={`New slider ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+
+                      <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/30" />
+
+                      <button
+                        type="button"
+                        onClick={() => removeNewSliderImage(index)}
+                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-error-500 opacity-100 shadow-sm transition hover:bg-white sm:opacity-0 sm:group-hover:opacity-100"
+                        aria-label={`Remove new slider ${index + 1}`}
+                      >
+                        <X size={16} />
+                      </button>
+
+                      <span className="absolute bottom-2 left-2 rounded-md bg-brand-500 px-2 py-1 text-[10px] font-medium text-white">
+                        New
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* UPLOAD */}
+
+              <div className="mt-5">
+                <input
+                  ref={sliderInputRef}
+                  type="file"
+                  multiple
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={handleSliderImagesChange}
+                  className="hidden"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => sliderInputRef.current?.click()}
+                  className="group flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-5 py-5 text-center transition-all duration-200 hover:border-brand-500 hover:bg-brand-50 dark:border-gray-700 dark:bg-gray-800/40 dark:hover:border-brand-500 dark:hover:bg-brand-500/5"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-gray-500 shadow-sm transition-colors group-hover:bg-brand-500 group-hover:text-white dark:bg-gray-800 dark:text-gray-400">
+                    <Plus size={19} />
+                  </span>
+
+                  <span className="flex flex-col items-start">
+                    <span className="text-sm font-semibold text-gray-800 dark:text-white">
+                      Add Slider Images
+                    </span>
+
+                    <span className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                      Click to browse and select multiple images
+                    </span>
+                  </span>
+                </button>
+
+                <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
+                  <span className="h-1 w-1 rounded-full bg-gray-400" />
+                  <span>PNG, JPG or WebP</span>
+
+                  <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+
+                  <span>Maximum 5MB per image</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ====================================================
+    VIDEO
+==================================================== */}
+
+            <div className="border-t border-gray-200 pt-6 dark:border-gray-800">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Website Video
+                </label>
+
+                <p className="mt-1 text-xs text-gray-400">
+                  Upload a video for your website. You can replace or remove the
+                  existing video.
+                </p>
+              </div>
+
+              {hasVideo ? (
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+                  <div className="relative aspect-video w-full bg-black">
+                    <video
+                      key={videoPreview || websiteSettings.video}
+                      src={videoPreview || `${baseUrl}${websiteSettings.video}`}
+                      controls
+                      playsInline
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-3 border-t border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-700">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {videoPreview
+                          ? "New video selected"
+                          : "Current website video"}
+                      </p>
+
+                      <p className="mt-1 text-xs text-gray-400">
+                        {videoPreview
+                          ? videoFile?.name || "Selected video"
+                          : "This video is currently saved on the server."}
+                      </p>
+                    </div>
+
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => videoInputRef.current?.click()}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 text-sm font-medium text-white transition hover:bg-brand-600"
+                      >
+                        <Upload size={16} />
+                        Change Video
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={removeVideo}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-error-500 transition hover:bg-error-50 dark:border-gray-700 dark:hover:bg-error-500/10"
+                      >
+                        <Trash2 size={16} />
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-5 text-center dark:border-gray-700 dark:bg-gray-900">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+                    <Upload size={21} />
+                  </div>
+
+                  <h3 className="mt-4 text-sm font-semibold text-gray-800 dark:text-white/90">
+                    No video selected
+                  </h3>
+
+                  <p className="mt-1 max-w-sm text-xs text-gray-500 dark:text-gray-400">
+                    Upload an MP4, WEBM, OGG, or MOV video up to 50MB.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                    className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 text-sm font-medium text-white transition hover:bg-brand-600"
+                  >
+                    <Upload size={16} />
+                    Select Video
+                  </button>
+                </div>
+              )}
+
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                onChange={handleVideoChange}
+                className="hidden"
+              />
+
+              <p className="mt-2 text-xs text-gray-400">
+                MP4, WEBM, OGG or MOV. Maximum 50MB.
+              </p>
+            </div>
           </div>
 
           {/* SAVE */}
@@ -1165,10 +1726,10 @@ export default function WebsiteSettings() {
             <button
               type="button"
               onClick={handleSaveWebsiteSettings}
-              disabled={isSavingWebsite}
+              disabled={websiteSettingLoading}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
-              {isSavingWebsite ? (
+              {websiteSettingLoading ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   Saving...
@@ -1184,8 +1745,8 @@ export default function WebsiteSettings() {
         </div>
 
         {/* ========================================================
-                    LOCATIONS
-                ======================================================== */}
+            LOCATIONS
+        ======================================================== */}
 
         <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-4 border-b border-gray-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-6 dark:border-gray-800">
@@ -1347,13 +1908,11 @@ function LocationCard({
       <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
         <div>
           <p className={labelClass}>Phone</p>
-
           <p className={valueClass}>{location.phone}</p>
         </div>
 
         <div>
           <p className={labelClass}>WhatsApp</p>
-
           <p className={valueClass}>{location.whatsapp}</p>
         </div>
 
@@ -1783,15 +2342,12 @@ const labelClass =
 
 const valueClass = "mt-1 break-words text-sm text-gray-700 dark:text-gray-300";
 
+/* ========================================================================
+   VALIDATION HELPERS
+======================================================================== */
+
 function isValidPhone(value: string): boolean {
   const trimmed = value.trim();
-
-  /*
-   * Supports:
-   * +1 (555) 014-2200
-   * +15550142200
-   * 03001234567
-   */
 
   const digits = trimmed.replace(/\D/g, "");
 

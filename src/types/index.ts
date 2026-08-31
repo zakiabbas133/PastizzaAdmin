@@ -8,22 +8,30 @@ export type MenuCategory =
   | "drinks";
 
 export interface MenuVariant {
+  id: string;
   name: string;
   price: number;
+  displayOrder: number;
+  isActive: boolean;
 }
 
 export interface MenuItem {
   id: string;
   name: string;
   slug: string;
-  category: MenuCategory;
+  categoryName: string;
+  category: string;
+  categoryId: string;
   description: string;
+  price: string;
   image: string;
   featured?: boolean;
   popular?: boolean;
   tags?: string[];
   ingredients?: string[];
   variants: MenuVariant[];
+  displayOrder: number;
+  isActive: boolean;
 }
 
 export interface Deal {
