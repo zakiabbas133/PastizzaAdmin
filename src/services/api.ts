@@ -51,7 +51,7 @@ export const api = createApi({
   tagTypes: [
     "Category",
     "MenuItem",
-    "Deal",
+    "Deals",
     "Location",
     "Review",
     "Categories",

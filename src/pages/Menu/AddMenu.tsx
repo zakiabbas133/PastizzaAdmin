@@ -110,6 +110,16 @@ export default function AddMenu() {
 
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [formErrors, setFormErrors] = useState<{
+    name?: string;
+    slug?: string;
+    price?: string;
+    categoryId?: string;
+    description?: string;
+    image?: string;
+    variants?: string;
+  }>({});
+
   /* ---------------------------------------------------------------------- */
   /* Slug                                                                     */
   /* ---------------------------------------------------------------------- */
@@ -300,49 +310,44 @@ export default function AddMenu() {
     event.preventDefault();
 
     setErrorMessage("");
+    setFormErrors({});
 
     /* -------------------------------------------------------------- */
     /* Validation                                                     */
     /* -------------------------------------------------------------- */
 
-    if (!name.trim()) {
-      setErrorMessage("Please enter a menu item name.");
+    const nextErrors: typeof formErrors = {};
 
-      return;
+    if (!name.trim()) {
+      nextErrors.name = "Please enter a menu item name.";
     }
 
     if (!slug.trim()) {
-      setErrorMessage("Please enter a slug.");
-
-      return;
+      nextErrors.slug = "Please enter a slug.";
     }
 
     if (!price.trim()) {
-      setErrorMessage("Please enter the item price");
+      nextErrors.price = "Please enter the item price.";
+    } else if (Number.isNaN(Number(price)) || Number(price) < 0) {
+      nextErrors.price = "Please enter a valid item price.";
     }
 
     if (!categoryId) {
-      setErrorMessage("Please select a category.");
-
-      return;
+      nextErrors.categoryId = "Please select a category.";
     }
 
     if (!description.trim()) {
-      setErrorMessage("Please enter a description.");
-
-      return;
+      nextErrors.description = "Please enter a description.";
     }
 
-    /*
-     * Remove completely empty variants.
-     */
+    if (!imageFile) {
+      nextErrors.image = "Please upload a menu image.";
+    }
+
     const validVariants = variants.filter(
       (variant) => variant.name.trim() !== "",
     );
 
-    /*
-     * Validate variant prices.
-     */
     const hasInvalidPrice = validVariants.some(
       (variant) =>
         variant.price.trim() === "" ||
@@ -351,7 +356,12 @@ export default function AddMenu() {
     );
 
     if (hasInvalidPrice) {
-      setErrorMessage("Please enter a valid price for every variant.");
+      nextErrors.variants = "Please enter a valid price for every filled-in variant.";
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFormErrors(nextErrors);
+      setErrorMessage("Please correct the highlighted fields.");
 
       return;
     }
@@ -495,27 +505,49 @@ export default function AddMenu() {
                 </div>
 
                 <div className="space-y-5 p-6">
-                  <FormField label="Item Name" required htmlFor="item-name">
+                  <FormField
+                    label="Item Name"
+                    required
+                    htmlFor="item-name"
+                    errorMessage={formErrors.name}
+                  >
                     <input
                       id="item-name"
                       value={name}
-                      onChange={(event) => handleNameChange(event.target.value)}
+                      onChange={(event) => {
+                        handleNameChange(event.target.value);
+                        setFormErrors((current) => ({ ...current, name: undefined }));
+                      }}
                       placeholder="e.g. Margherita Classica"
-                      className={inputClass}
-                      required
+                      className={`${inputClass} ${
+                        formErrors.name
+                          ? "border-error-500 focus:border-error-500 focus:ring-error-500/10"
+                          : ""
+                      }`}
                     />
                   </FormField>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <FormField label="Slug" required htmlFor="slug">
+                    <FormField
+                      label="Slug"
+                      required
+                      htmlFor="slug"
+                      errorMessage={formErrors.slug}
+                    >
                       <input
                         id="slug"
                         disabled
                         value={slug}
-                        onChange={(event) => setSlug(event.target.value)}
+                        onChange={(event) => {
+                          setSlug(event.target.value);
+                          setFormErrors((current) => ({ ...current, slug: undefined }));
+                        }}
                         placeholder="margherita-classica"
-                        className={inputClass}
-                        required
+                        className={`${inputClass} ${
+                          formErrors.slug
+                            ? "border-error-500 focus:border-error-500 focus:ring-error-500/10"
+                            : ""
+                        }`}
                       />
 
                       <p className="mt-1.5 text-xs text-gray-400">
@@ -523,28 +555,50 @@ export default function AddMenu() {
                       </p>
                     </FormField>
 
-                    <FormField label="Price" required htmlFor="price">
+                    <FormField
+                      label="Price"
+                      required
+                      htmlFor="price"
+                      errorMessage={formErrors.price}
+                    >
                       <input
                         id="price"
                         value={price}
-                        onChange={(event) => setPrice(event.target.value)}
+                        onChange={(event) => {
+                          setPrice(event.target.value);
+                          setFormErrors((current) => ({ ...current, price: undefined }));
+                        }}
                         placeholder="99"
-                        className={inputClass}
-                        required
+                        className={`${inputClass} ${
+                          formErrors.price
+                            ? "border-error-500 focus:border-error-500 focus:ring-error-500/10"
+                            : ""
+                        }`}
                       />
                     </FormField>
                   </div>
 
                   {/* Category */}
 
-                  <FormField label="Category" required htmlFor="category">
+                  <FormField
+                    label="Category"
+                    required
+                    htmlFor="category"
+                    errorMessage={formErrors.categoryId}
+                  >
                     <div className="relative">
                       <select
                         id="category"
                         value={categoryId}
-                        onChange={(event) => setCategoryId(event.target.value)}
-                        className={`${inputClass} appearance-none pr-10`}
-                        required
+                        onChange={(event) => {
+                          setCategoryId(event.target.value);
+                          setFormErrors((current) => ({ ...current, categoryId: undefined }));
+                        }}
+                        className={`${inputClass} appearance-none pr-10 ${
+                          formErrors.categoryId
+                            ? "border-error-500 focus:border-error-500 focus:ring-error-500/10"
+                            : ""
+                        }`}
                         disabled={categoriesLoading}
                       >
                         <option value="">
@@ -576,16 +630,27 @@ export default function AddMenu() {
 
                   {/* Description */}
 
-                  <FormField label="Description" required htmlFor="description">
+                  <FormField
+                    label="Description"
+                    required
+                    htmlFor="description"
+                    errorMessage={formErrors.description}
+                  >
                     <textarea
                       id="description"
                       value={description}
-                      onChange={(event) => setDescription(event.target.value)}
+                      onChange={(event) => {
+                        setDescription(event.target.value);
+                        setFormErrors((current) => ({ ...current, description: undefined }));
+                      }}
                       placeholder="Describe the ingredients, preparation and taste of this item..."
                       rows={5}
                       maxLength={500}
-                      className={`${inputClass} min-h-[130px] resize-y py-3`}
-                      required
+                      className={`${inputClass} min-h-[130px] resize-y py-3 ${
+                        formErrors.description
+                          ? "border-error-500 focus:border-error-500 focus:ring-error-500/10"
+                          : ""
+                      }`}
                     />
 
                     <div className="mt-1.5 flex justify-between">
@@ -700,6 +765,12 @@ export default function AddMenu() {
                     ))}
                   </div>
 
+                  {formErrors.variants && (
+                    <p className="mt-3 text-xs text-error-500">
+                      {formErrors.variants}
+                    </p>
+                  )}
+
                   <div className="mt-5 rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
                       Example
@@ -742,6 +813,10 @@ export default function AddMenu() {
                     className="hidden"
                     onChange={handleImageChange}
                   />
+
+                  {formErrors.image && (
+                    <p className="mb-3 text-xs text-error-500">{formErrors.image}</p>
+                  )}
 
                   {image ? (
                     <div className="relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
@@ -1105,11 +1180,13 @@ function FormField({
   required,
   htmlFor,
   children,
+  errorMessage,
 }: {
   label: string;
   required?: boolean;
   htmlFor?: string;
   children: React.ReactNode;
+  errorMessage?: string;
 }) {
   return (
     <div>
@@ -1123,6 +1200,10 @@ function FormField({
       </label>
 
       {children}
+
+      {errorMessage && (
+        <p className="mt-1.5 text-xs text-error-500">{errorMessage}</p>
+      )}
     </div>
   );
 }

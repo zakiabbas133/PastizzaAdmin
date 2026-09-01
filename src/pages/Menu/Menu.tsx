@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -26,6 +26,7 @@ import { useGetCategoriesQuery } from "../../services/categoriesApi";
 
 import DashboardLoader from "../../components/loaders/DashboardLoader";
 import { baseUrl } from "../../services/api";
+import Toast from "../../components/toast/Toast";
 
 type ViewMode = "grid" | "list";
 
@@ -74,6 +75,16 @@ export default function MenuItems() {
    *
    * "" means "All Categories".
    */
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
   const [category, setCategory] = useState<string>("");
 
   const [status, setStatus] = useState<"all" | "featured" | "popular">("all");
@@ -94,6 +105,8 @@ export default function MenuItems() {
    * Stores the response.data returned by the delete API.
    */
   const [successMessage, setSuccessMessage] = useState<unknown>(null);
+
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* ---------------------------------------------------------------------- */
   /* Filtering                                                               */
@@ -180,6 +193,8 @@ export default function MenuItems() {
     try {
       const response = await deleteMenuItem(deleteItem.id).unwrap();
 
+      console.log();
+
       if (response.success) {
         /*
          * Close delete confirmation modal.
@@ -205,11 +220,51 @@ export default function MenuItems() {
          */
         setSuccessMessage(response.data) as any;
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      const apiError = error as { data?: { message?: string } };
+
+      showToast(apiError?.data?.message ?? "Failed to delete menu item.", "error");
       console.error("Failed to delete menu item:", error);
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  /* ====================================================================
+       TOAST
+  ==================================================================== */
+
+  const showToast = (message: string, type: "success" | "error"): void => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    setToast({
+      show: true,
+      message,
+      type,
+    });
+
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast((previous) => ({
+        ...previous,
+        show: false,
+      }));
+
+      toastTimeoutRef.current = null;
+    }, 3000);
+  };
+
+  const hideToast = (): void => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = null;
+    }
+
+    setToast((previous) => ({
+      ...previous,
+      show: false,
+    }));
   };
 
   /* ---------------------------------------------------------------------- */
@@ -223,7 +278,12 @@ export default function MenuItems() {
   return (
     <>
       {isLoading && <DashboardLoader message="Loading menus..." />}
-
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={hideToast}
+      />
       <div className="space-y-6">
         {/* ================================================================== */}
         {/* HEADER                                                             */}
@@ -609,7 +669,6 @@ function MenuItemCard({
   onDelete: (item: MenuItem) => void;
 }) {
   const price = item.variants.length == 0 ? item.price : getStartingPrice(item);
-  console.log(item);
 
   return (
     <div className="group overflow-hidden rounded-xl border border-gray-200 bg-white transition hover:border-gray-300 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-gray-700">

@@ -532,9 +532,7 @@ function InfoRow({
   label: string;
   value: string;
   monospace?: boolean;
-}) {
-    console.log(label, value);
-    
+}) { 
   return (
     <div className="flex items-start justify-between gap-4">
       <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>

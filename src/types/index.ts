@@ -34,6 +34,16 @@ export interface MenuItem {
   isActive: boolean;
 }
 
+export interface DealItemDetail {
+  id?: string;
+  menuItemId?: string;
+  menuItemVariantId?: string | null;
+  quantity?: number;
+  displayOrder?: number;
+  menuItemName?: string | null;
+  menuItemVariantName?: string | null;
+}
+
 export interface Deal {
   id: string;
   title: string;
@@ -43,6 +53,7 @@ export interface Deal {
   originalPrice: number;
   badge?: string;
   items: string[];
+  dealItems?: DealItemDetail[];
   featured?: boolean;
 }
 

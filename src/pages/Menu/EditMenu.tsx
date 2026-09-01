@@ -517,8 +517,6 @@ export default function EditMenu() {
       // ========================================================
       // Variants
       // ========================================================
-      console.log(form.variants);
-
       form.variants.forEach((variant, index) => {
         formData.append(`Variants[${index}].Id`, variant.id || "");
 

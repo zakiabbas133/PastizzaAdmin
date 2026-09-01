@@ -130,8 +130,6 @@ export default function WebsiteSettings() {
 
   const data = apiData as Partial<WebsiteSettingsData> | undefined;
 
-  console.log(data);
-
   const [addOrUpdateWebsiteSettings, { isLoading: websiteSettingLoading }] =
     useAddOrUpdateWebsiteSettingsMutation();
 
