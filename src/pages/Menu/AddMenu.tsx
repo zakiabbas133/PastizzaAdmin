@@ -48,8 +48,6 @@ const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 export default function AddMenu() {
   const navigate = useNavigate();
 
-  const { data = [], isLoading: categoriesLoading } = useGetCategoriesQuery();
-
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   /* ---------------------------------------------------------------------- */
@@ -599,15 +597,15 @@ export default function AddMenu() {
                             ? "border-error-500 focus:border-error-500 focus:ring-error-500/10"
                             : ""
                         }`}
-                        disabled={categoriesLoading}
+                        disabled={isLoadingCategories}
                       >
                         <option value="">
-                          {categoriesLoading
+                          {isLoadingCategories
                             ? "Loading categories..."
                             : "Select a category"}
                         </option>
 
-                        {data
+                        {categories
                           .filter(
                             (item) =>
                               item.id !==
