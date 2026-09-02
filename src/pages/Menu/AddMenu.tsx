@@ -609,7 +609,7 @@ export default function AddMenu() {
                           .filter(
                             (item) =>
                               item.id !==
-                              "00000000-0000-0000-0000-000000000000" && item.description != all,
+                              "00000000-0000-0000-0000-000000000000" && item.description != "all",
                           )
                           .map((item) => (
                             <option key={item.id} value={item.id}>
