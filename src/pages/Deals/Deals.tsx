@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   Edit3,
@@ -20,6 +20,7 @@ import {
 } from "../../services/dealsApi";
 import DashboardLoader from "../../components/loaders/DashboardLoader";
 import { baseUrl } from "../../services/api";
+import Toast from "../../components/toast/Toast";
 
 export default function Deals() {
   const { data, isLoading: dealsLoading } = useGetDealsQuery();
@@ -28,6 +29,18 @@ export default function Deals() {
   const navigate = useNavigate();
 
   const [dealList, setDealList] = useState<Deal[]>([]);
+
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const normalizedDeals = (Array.isArray(data?.data) ? data.data : []).map(
@@ -51,7 +64,7 @@ export default function Deals() {
             : [],
         featured: Boolean(deal.featured),
       }),
-    ) as Deal[];    
+    ) as Deal[];
 
     setDealList(normalizedDeals);
   }, [data]);
@@ -79,16 +92,65 @@ export default function Deals() {
     });
   }, [dealList, searchQuery]);
 
+  const showToast = (message: string, type: "success" | "error") => {
+    // Clear previous timeout
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    setToast({
+      show: true,
+      message,
+      type,
+    });
+
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast((previous) => ({
+        ...previous,
+        show: false,
+      }));
+
+      toastTimeoutRef.current = null;
+    }, 3000);
+  };
+
+  const hideToast = () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = null;
+    }
+
+    setToast((previous) => ({
+      ...previous,
+      show: false,
+    }));
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget || isDeleting) {
       return;
     }
 
     try {
-      await deleteDeal(deleteTarget.id).unwrap();
+      const response = await deleteDeal(deleteTarget.id).unwrap();
+      if (response.success) {
+        showToast("Deal deleted successfully", "success");
+      }
       setDeleteTarget(null);
     } catch (error) {
       console.error("Failed to delete deal:", error);
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "data" in error &&
+        typeof error.data === "object" &&
+        error.data !== null &&
+        "message" in error.data &&
+        typeof error.data.message === "string"
+          ? error.data.message
+          : "Failed to delete deal.";
+
+      showToast(message, "error");
     }
   };
 
@@ -106,6 +168,13 @@ export default function Deals() {
       {/* =====================================================
           HEADER
       ===================================================== */}
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={hideToast}
+      />
+
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-title-md font-semibold text-gray-800 dark:text-white/90">

@@ -10,7 +10,11 @@ import { logout } from "../features/auth/authSlice";
 
 import type { LoginResponse } from "../types/auth";
 
-export const baseUrl = "https://localhost:44380";
+export const baseUrl = import.meta.env.VITE_BASE_URL;
+
+console.log(baseUrl);
+
+
 const rawBaseQuery = fetchBaseQuery({
   baseUrl,
 

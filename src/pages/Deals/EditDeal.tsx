@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -16,6 +16,7 @@ import {
 import { useGetMenuItemsQuery } from "../../services/menuApi";
 import { Deal } from "../../types";
 import { baseUrl } from "../../services/api";
+import Toast from "../../components/toast/Toast";
 
 interface DealForm {
   title: string;
@@ -54,6 +55,18 @@ export default function EditDeal() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [imagePreview, setImagePreview] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!deal) {
@@ -269,6 +282,40 @@ export default function EditDeal() {
     return newErrors;
   };
 
+  const showToast = (message: string, type: "success" | "error") => {
+    // Clear previous timeout
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    setToast({
+      show: true,
+      message,
+      type,
+    });
+
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast((previous) => ({
+        ...previous,
+        show: false,
+      }));
+
+      toastTimeoutRef.current = null;
+    }, 3000);
+  };
+
+  const hideToast = () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = null;
+    }
+
+    setToast((previous) => ({
+      ...previous,
+      show: false,
+    }));
+  };
+
   const buildDealItemsPayload = () =>
     form?.items
       .map((menuItemId) => menuItemId.trim())
@@ -345,13 +392,12 @@ export default function EditDeal() {
       // ====================================================
       // SUCCESS
       // ====================================================
-
-      setShowSuccessModal(true);
-
-      console.log("Deal updated successfully:", response);
+      if (response.success) {
+        setShowSuccessModal(true);
+      }
     } catch (error: any) {
       console.error("Error updating deal:", error);
-
+      showToast(error.data.message, "error");
       // ====================================================
       // API ERROR
       // ====================================================
@@ -375,6 +421,12 @@ export default function EditDeal() {
 
   return (
     <div className="mx-auto w-full max-w-5xl">
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={hideToast}
+      />
       {/* HEADER */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
         <Link

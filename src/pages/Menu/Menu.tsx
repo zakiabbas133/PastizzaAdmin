@@ -60,7 +60,7 @@ export default function MenuItems() {
     data: categories = [],
     isLoading: categoriesLoading,
     isError: categoriesError,
-  } = useGetCategoriesQuery();
+  } = useGetCategoriesQuery();  
 
   const [deleteMenuItem] = useDeleteMenuItemMutation();
 
@@ -192,9 +192,6 @@ export default function MenuItems() {
 
     try {
       const response = await deleteMenuItem(deleteItem.id).unwrap();
-
-      console.log();
-
       if (response.success) {
         /*
          * Close delete confirmation modal.
@@ -354,7 +351,7 @@ export default function MenuItems() {
 
           <SummaryCard
             title="Categories"
-            value={categories.length - 1}
+            value={categories.length == 0 ? 0 : categories.length - 1}
             icon={<Grid2X2 size={20} />}
           />
         </div>

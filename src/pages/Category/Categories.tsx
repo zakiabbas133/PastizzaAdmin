@@ -214,7 +214,6 @@ export default function Categories() {
 
     const label = form.label.trim();
     const description = form.description.trim();
-    const currentData = data.find((x) => x.label == label);
 
     /*
      * Category name
@@ -242,17 +241,18 @@ export default function Categories() {
     /*
      * Image
      */
-    if (currentData?.image) {
-    } else {
-      if (form.imageFile) {
-        if (!ALLOWED_IMAGE_TYPES.includes(form?.imageFile?.type)) {
-          newErrors.image = "Only PNG, JPG, JPEG, and WEBP images are allowed.";
-        } else if (form?.imageFile?.size > MAX_IMAGE_SIZE) {
-          newErrors.image = "Image size must not exceed 5 MB.";
-        }
-      } else {
+    if (!selectedCategory?.image) {
+      if (!form.imageFile) {
         newErrors.image = "Image is required.";
+      } else if (!ALLOWED_IMAGE_TYPES.includes(form?.imageFile?.type)) {
+        newErrors.image = "Only PNG, JPG, JPEG, and WEBP images are allowed.";
+      } else if (form?.imageFile?.size > MAX_IMAGE_SIZE) {
+        newErrors.image = "Image size must not exceed 5 MB.";
       }
+    } else if (selectedCategory?.image) {
+      return Object.keys(newErrors).length === 0;
+    } else {
+      newErrors.image = "Image is required.";
     }
 
     setErrors(newErrors);
@@ -860,7 +860,8 @@ export default function Categories() {
             ) : (
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {filteredCategories.map((category) => {
-                  const isDefault = category.description === "all" || updateOrderLoading;
+                  const isDefault =
+                    category.description === "all" || updateOrderLoading;
 
                   const isDragged = draggedCategory?.id === category.id;
 

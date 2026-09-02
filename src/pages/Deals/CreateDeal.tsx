@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -13,6 +13,7 @@ import { Link, useNavigate } from "react-router";
 
 import { useAddOrUpdateDealMutation } from "../../services/dealsApi";
 import { useGetMenuItemsQuery } from "../../services/menuApi";
+import Toast from "../../components/toast/Toast";
 
 interface DealForm {
   title: string;
@@ -226,6 +227,18 @@ export default function CreateDeal() {
 
   const [createdDealName, setCreatedDealName] = useState("");
 
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ============================================================
   // IMAGE PREVIEW
   // ============================================================
@@ -248,6 +261,46 @@ export default function CreateDeal() {
   // ============================================================
   // IMAGE CHANGE
   // ============================================================
+
+  /*
+   * ============================================================
+   * TOAST
+   * ============================================================
+   */
+
+  const showToast = (message: string, type: "success" | "error") => {
+    // Clear previous timeout
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    setToast({
+      show: true,
+      message,
+      type,
+    });
+
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast((previous) => ({
+        ...previous,
+        show: false,
+      }));
+
+      toastTimeoutRef.current = null;
+    }, 3000);
+  };
+
+  const hideToast = () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = null;
+    }
+
+    setToast((previous) => ({
+      ...previous,
+      show: false,
+    }));
+  };
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -485,8 +538,6 @@ export default function CreateDeal() {
 
       const dealItems = buildDealItemsPayload();
 
-      console.log(dealItems);
-
       formData.append("DealItems", JSON.stringify(dealItems));
 
       // ====================================================
@@ -509,15 +560,14 @@ export default function CreateDeal() {
       // ====================================================
       // SUCCESS
       // ====================================================
+      if (response.success) {
+        setCreatedDealName(form.title.trim());
 
-      setCreatedDealName(form.title.trim());
-
-      setShowSuccessModal(true);
-
-      console.log("Deal created successfully:", response);
+        setShowSuccessModal(true);
+      }
     } catch (error: any) {
       console.error("Error creating deal:", error);
-
+      showToast(error.data.message, "error");
       // ====================================================
       // API ERROR
       // ====================================================
@@ -590,6 +640,17 @@ export default function CreateDeal() {
 
   return (
     <>
+      {/* =====================================================
+              TOAST
+          ===================================================== */}
+
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={hideToast}
+      />
+
       <div className="mx-auto w-full max-w-5xl">
         {/* =========================================================
                     HEADER
