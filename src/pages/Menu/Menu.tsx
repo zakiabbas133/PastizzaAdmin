@@ -89,7 +89,7 @@ export default function MenuItems() {
 
   const [status, setStatus] = useState<"all" | "featured" | "popular">("all");
 
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const [page, setPage] = useState(1);
 

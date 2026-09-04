@@ -10,9 +10,9 @@ import {
   X,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router";
-
 import { useAddOrUpdateDealMutation } from "../../services/dealsApi";
 import { useGetMenuItemsQuery } from "../../services/menuApi";
+import Select from "react-select";
 import Toast from "../../components/toast/Toast";
 
 interface DealForm {
@@ -239,6 +239,10 @@ export default function CreateDeal() {
 
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const menuItemsSelectData = menuItems.map((x) => {
+    return { value: x.id, label: x.name };
+  });
+
   // ============================================================
   // IMAGE PREVIEW
   // ============================================================
@@ -371,14 +375,6 @@ export default function CreateDeal() {
       ...previous,
       items: undefined,
     }));
-  };
-
-  const toggleMenuItem = (menuItemId: string) => {
-    const nextItems = form.items.includes(menuItemId)
-      ? form.items.filter((itemId) => itemId !== menuItemId)
-      : [...form.items, menuItemId];
-
-    handleItemSelection(nextItems);
   };
 
   const selectedMenuItems = form.items
@@ -1034,7 +1030,7 @@ export default function CreateDeal() {
               </div>
 
               <div
-                className={`overflow-hidden rounded-xl border bg-transparent shadow-sm transition ${
+                className={`rounded-xl border bg-transparent shadow-sm transition ${
                   errors.items
                     ? "border-error-500 focus-within:border-error-500 focus-within:ring-3 focus-within:ring-error-500/10 dark:border-error-500"
                     : "border-gray-300 focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/10 dark:border-gray-700"
@@ -1043,17 +1039,12 @@ export default function CreateDeal() {
                 <div className="flex min-h-[56px] flex-wrap items-center gap-2 border-b border-gray-200 bg-gray-50/70 px-3 py-2 dark:border-gray-700 dark:bg-gray-900/60">
                   {selectedMenuItems.length > 0 ? (
                     selectedMenuItems.map((menuItem) => (
-                      <button
-                        type="button"
+                      <span
                         key={menuItem.id}
-                        onClick={() => toggleMenuItem(menuItem.id)}
                         className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/15"
                       >
                         {menuItem.name}
-                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-200 text-[10px] text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
-                          ×
-                        </span>
-                      </button>
+                      </span>
                     ))
                   ) : (
                     <span className="text-sm text-gray-400 dark:text-gray-500">
@@ -1062,7 +1053,7 @@ export default function CreateDeal() {
                   )}
                 </div>
 
-                <select
+                {/* <select
                   multiple
                   value={form.items}
                   disabled={menuItemsLoading || menuItems.length === 0}
@@ -1087,7 +1078,23 @@ export default function CreateDeal() {
                       {menuItem.name}
                     </option>
                   ))}
-                </select>
+                </select> */}
+                <Select
+                  options={menuItemsSelectData}
+                  isMulti
+                  className="basic-multi-select w-full border-0 bg-transparent p-2 text-sm text-gray-800 outline-none dark:bg-gray-900 dark:text-white/90"
+                  classNamePrefix="select"
+                  placeholder="Select 1 or more food items"
+                  isDisabled={menuItemsLoading || menuItems.length === 0}
+                  onChange={(data) => {
+                    const selectedValues = Array.from(
+                      data,
+                      (option) => option.value,
+                    );
+
+                    handleItemSelection(selectedValues);
+                  }}
+                />
               </div>
 
               {errors.items && (

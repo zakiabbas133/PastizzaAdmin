@@ -239,8 +239,8 @@ export default function Deals() {
             </div>
 
             {/* VIEW SWITCHER */}
-            <div className="flex h-11 rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-900">
-              <button
+            <div className="flex items-center gap-2 self-end rounded-lg border border-gray-200 p-1 dark:border-gray-700">
+              {/* <button
                 type="button"
                 onClick={() => setViewMode("grid")}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm transition sm:flex-none ${
@@ -250,7 +250,6 @@ export default function Deals() {
                 }`}
               >
                 <Grid2X2 size={16} />
-                <span className="hidden sm:inline">Grid</span>
               </button>
 
               <button
@@ -264,6 +263,31 @@ export default function Deals() {
               >
                 <List size={16} />
                 <span className="hidden sm:inline">List</span>
+              </button> */}
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={`flex h-9 w-9 items-center justify-center rounded-md transition ${
+                  viewMode === "list"
+                    ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-white"
+                    : "text-gray-400 hover:text-gray-700 dark:hover:text-white"
+                }`}
+                aria-label="List view"
+              >
+                <List size={18} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`flex h-9 w-9 items-center justify-center rounded-md transition ${
+                  viewMode === "grid"
+                    ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-white"
+                    : "text-gray-400 hover:text-gray-700 dark:hover:text-white"
+                }`}
+                aria-label="Grid view"
+              >
+                <Grid2X2 size={17} />
               </button>
             </div>
           </div>
