@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 
 import type { Location } from "../../types";
-import { locations as initialLocations } from "../../data/locations";
 import {
   useAddOrUpdateWebsiteSettingsMutation,
   useGetWebsiteSettingsQuery,
@@ -21,6 +20,13 @@ import {
 import Toast from "../../components/toast/Toast";
 import { baseUrl } from "../../services/api";
 import DashboardLoader from "../../components/loaders/DashboardLoader";
+import LocationPicker from "../../components/locationPicker/LocationPicker";
+import {
+  useAddLocationMutation,
+  useGetLocationsQuery,
+  useRemoveLocationMutation,
+  useUpdateLocationMutation,
+} from "../../services/locationsApi";
 
 /* ========================================================================
    TYPES
@@ -42,7 +48,7 @@ interface LocationForm {
   address: string;
   phone: string;
   whatsapp: string;
-  openingHours: string[];
+  openingHours: string;
   latitude: string;
   longitude: string;
 }
@@ -54,28 +60,31 @@ interface SuccessModalData {
   message: string;
 }
 
+interface LocationPayload {
+  id?: string;
+  name: string;
+  address: string;
+  phone: string;
+  whatsapp: string;
+  openingHours: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+}
+
 /* ========================================================================
    CONSTANTS
 ======================================================================== */
-
-const DAYS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-] as const;
 
 const EMPTY_LOCATION_FORM: LocationForm = {
   name: "",
   address: "",
   phone: "",
   whatsapp: "",
-  openingHours: Array(7).fill(""),
-  latitude: "",
-  longitude: "",
+  openingHours: "03:00 PM - 03:00 AM",
+  latitude: "33.6844",
+  longitude: "73.0479",
 };
 
 const DEFAULT_WHATSAPP_MESSAGE =
@@ -117,21 +126,25 @@ export default function WebsiteSettings() {
     whatsapp: "https://wa.me/",
   } as const;
 
-  /*
-   * The RTK Query endpoint can expose WebsiteSettings while this component
-   * expects WebsiteSettingsData. Normalize the response here so the rest
-   * of the component always works with one consistent type.
-   */
   const {
     data: apiData,
     isLoading: websiteSettingsLoading,
     refetch,
   } = useGetWebsiteSettingsQuery();
-
   const data = apiData as Partial<WebsiteSettingsData> | undefined;
+  const { data: locationsData = [] } = useGetLocationsQuery();
 
   const [addOrUpdateWebsiteSettings, { isLoading: websiteSettingLoading }] =
     useAddOrUpdateWebsiteSettingsMutation();
+
+  const [addLocation, { isLoading: addLocationLoading }] =
+    useAddLocationMutation();
+
+  const [updateLocation, { isLoading: updateLocationLoading }] =
+    useUpdateLocationMutation();
+
+  const [removeLocation, { isLoading: removeLocationLoading }] =
+    useRemoveLocationMutation();
 
   /* --------------------------------------------------------------------
        WEBSITE SETTINGS
@@ -157,10 +170,6 @@ export default function WebsiteSettings() {
 
   /* --------------------------------------------------------------------
        SLIDER IMAGES
-       
-       sliderImages  = existing server images that should be KEPT
-       sliderFiles   = newly selected files
-       sliderPreviews = previews corresponding to sliderFiles
   -------------------------------------------------------------------- */
 
   const [sliderImages, setSliderImages] = useState<string[]>([]);
@@ -200,8 +209,6 @@ export default function WebsiteSettings() {
        LOCATIONS
   -------------------------------------------------------------------- */
 
-  const [locations, setLocations] = useState<Location[]>(initialLocations);
-
   const [isLocationModalOpen, setIsLocationModalOpen] =
     useState<boolean>(false);
 
@@ -211,14 +218,11 @@ export default function WebsiteSettings() {
 
   const [locationForm, setLocationForm] = useState<LocationForm>({
     ...EMPTY_LOCATION_FORM,
-    openingHours: [...EMPTY_LOCATION_FORM.openingHours],
   });
 
   const [locationErrors, setLocationErrors] = useState<FormErrors>({});
 
   const [deleteLocation, setDeleteLocation] = useState<Location | null>(null);
-
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   /* --------------------------------------------------------------------
        SUCCESS MODAL
@@ -241,10 +245,20 @@ export default function WebsiteSettings() {
 
     try {
       if (data.sliderImages) {
-        const parsed = JSON.parse(data.sliderImages as any);
+        /*
+         * sliderImages may already be an array or may be a JSON string
+         * depending on the API response.
+         */
+        if (Array.isArray(data.sliderImages)) {
+          existingSliderImages = data.sliderImages.filter(Boolean);
+        } else if (typeof data.sliderImages === "string") {
+          const parsed: unknown = JSON.parse(data.sliderImages);
 
-        if (Array.isArray(parsed)) {
-          existingSliderImages = parsed.filter(Boolean);
+          if (Array.isArray(parsed)) {
+            existingSliderImages = parsed.filter(
+              (image): image is string => typeof image === "string" && !!image,
+            );
+          }
         }
       }
     } catch {
@@ -264,11 +278,6 @@ export default function WebsiteSettings() {
     }));
 
     setSliderImages(existingSliderImages);
-
-    /*
-     * Only restore the server video if there isn't a local video
-     * currently being edited.
-     */
   }, [data]);
 
   /* ====================================================================
@@ -293,7 +302,7 @@ export default function WebsiteSettings() {
         URL.revokeObjectURL(videoPreview);
       }
     };
-  }, []);
+  }, [logoPreview, sliderPreviews, videoPreview]);
 
   /* ====================================================================
        TOAST
@@ -341,11 +350,6 @@ export default function WebsiteSettings() {
   ): void => {
     const files = Array.from(event.target.files ?? []);
 
-    /*
-     * Always reset the input.
-     *
-     * This allows the user to select the same file again after removing it.
-     */
     event.target.value = "";
 
     if (files.length === 0) {
@@ -375,18 +379,8 @@ export default function WebsiteSettings() {
       return;
     }
 
-    /*
-     * IMPORTANT:
-     *
-     * Do NOT do:
-     *
-     * setSliderImages([])
-     *
-     * because sliderImages contains existing server images that the user
-     * has decided to keep.
-     *
-     * New files are simply appended.
-     */
+    sliderImagesDirtyRef.current = true;
+
     const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
 
     setSliderFiles((previous) => [...previous, ...validFiles]);
@@ -443,9 +437,6 @@ export default function WebsiteSettings() {
       return;
     }
 
-    /*
-     * Revoke the previous local preview if there was one.
-     */
     if (videoPreview) {
       URL.revokeObjectURL(videoPreview);
     }
@@ -455,10 +446,6 @@ export default function WebsiteSettings() {
     setVideoFile(file);
     setVideoPreview(preview);
 
-    /*
-     * Clear any previous server video from the local form state.
-     * The backend will replace it with the new VideoFile.
-     */
     setWebsiteSettings((previous) => ({
       ...previous,
       video: "",
@@ -466,19 +453,12 @@ export default function WebsiteSettings() {
   };
 
   const removeVideo = (): void => {
-    /*
-     * Remove newly selected local video.
-     */
     if (videoPreview) {
       URL.revokeObjectURL(videoPreview);
     }
 
     setVideoPreview("");
     setVideoFile(null);
-
-    /*
-     * Mark the existing server video for deletion.
-     */
 
     setWebsiteSettings((previous) => ({
       ...previous,
@@ -532,7 +512,9 @@ export default function WebsiteSettings() {
 
     setWebsiteErrors((previous) => {
       const next = { ...previous };
+
       delete next.logo;
+
       return next;
     });
   };
@@ -552,7 +534,9 @@ export default function WebsiteSettings() {
 
     setWebsiteErrors((previous) => {
       const next = { ...previous };
+
       delete next.logo;
+
       return next;
     });
 
@@ -622,7 +606,7 @@ export default function WebsiteSettings() {
         }
       }
     } catch {
-      // Invalid URL. Validation will handle it.
+      // Validation will handle invalid URLs.
     }
 
     return trimmed;
@@ -690,13 +674,9 @@ export default function WebsiteSettings() {
   const validateWebsiteSettings = (): boolean => {
     const errors: FormErrors = {};
 
-    /* LOGO */
-
     if (!websiteSettings.logo.trim() && !logoFile && !logoPreview) {
       errors.logo = "Website logo is required.";
     }
-
-    /* FACEBOOK */
 
     const facebookIdentifier = getSocialIdentifier(
       websiteSettings.facebookUrl,
@@ -709,8 +689,6 @@ export default function WebsiteSettings() {
       errors.facebookUrl = "Facebook is invalid.";
     }
 
-    /* INSTAGRAM */
-
     const instagramIdentifier = getSocialIdentifier(
       websiteSettings.instagramUrl,
       "instagram",
@@ -722,8 +700,6 @@ export default function WebsiteSettings() {
       errors.instagramUrl = "Instagram is invalid.";
     }
 
-    /* WHATSAPP */
-
     const whatsappNumber = getWhatsAppNumber(websiteSettings.whatsappUrl);
 
     if (!whatsappNumber) {
@@ -732,8 +708,6 @@ export default function WebsiteSettings() {
       errors.whatsappUrl = "WhatsApp is invalid.";
     }
 
-    /* WHATSAPP MESSAGE */
-
     const whatsappMessage = websiteSettings.whatsappMessage.trim();
 
     if (!whatsappMessage) {
@@ -741,8 +715,6 @@ export default function WebsiteSettings() {
     } else if (whatsappMessage.length < 5 || whatsappMessage.length > 500) {
       errors.whatsappMessage = "WhatsApp message is invalid.";
     }
-
-    /* EMAIL */
 
     const email = websiteSettings.email.trim();
 
@@ -782,36 +754,15 @@ export default function WebsiteSettings() {
 
       formData.append("Email", websiteSettings.email.trim());
 
-      /* ==============================================================
-         LOGO
-      ============================================================== */
-
       if (logoFile) {
         formData.append("LogoFile", logoFile);
       }
 
-      /* ==============================================================
-         EXISTING SLIDER IMAGES TO KEEP
-         
-         This contains ONLY the server images that the user has not
-         removed.
-      ============================================================== */
-
       formData.append("SliderImages", JSON.stringify(sliderImages));
-
-      /* ==============================================================
-         NEW SLIDER IMAGES
-         
-         These are the files that were selected in this session.
-      ============================================================== */
 
       sliderFiles.forEach((file) => {
         formData.append("SliderImageFiles", file);
       });
-
-      /* ==============================================================
-         VIDEO
-      ============================================================== */
 
       if (videoFile) {
         formData.append("VideoFile", videoFile);
@@ -828,28 +779,16 @@ export default function WebsiteSettings() {
         return;
       }
 
-      /* ==============================================================
-         SUCCESS
-      ============================================================== */
-
       setSuccessModal({
         title: "Settings Saved!",
         message: "Your website settings have been updated successfully.",
       });
-
-      /* ==============================================================
-         CLEAR LOGO FILE
-      ============================================================== */
 
       setLogoFile(null);
 
       if (logoInputRef.current) {
         logoInputRef.current.value = "";
       }
-
-      /* ==============================================================
-         CLEAR NEW SLIDER FILES/PREVIEWS
-      ============================================================== */
 
       sliderPreviews.forEach((preview) => {
         URL.revokeObjectURL(preview);
@@ -862,10 +801,6 @@ export default function WebsiteSettings() {
         sliderInputRef.current.value = "";
       }
 
-      /* ==============================================================
-         CLEAR VIDEO FILE/PREVIEW
-      ============================================================== */
-
       if (videoPreview) {
         URL.revokeObjectURL(videoPreview);
       }
@@ -876,10 +811,6 @@ export default function WebsiteSettings() {
       if (videoInputRef.current) {
         videoInputRef.current.value = "";
       }
-
-      /* ==============================================================
-         REFRESH FROM SERVER
-      ============================================================== */
 
       await refetch();
     } catch (error) {
@@ -903,7 +834,6 @@ export default function WebsiteSettings() {
 
     setLocationForm({
       ...EMPTY_LOCATION_FORM,
-      openingHours: [...EMPTY_LOCATION_FORM.openingHours],
     });
 
     setLocationErrors({});
@@ -914,13 +844,13 @@ export default function WebsiteSettings() {
     setEditingLocationId(location.id);
 
     setLocationForm({
-      name: location.name,
-      address: location.address,
-      phone: location.phone,
-      whatsapp: String(location.whatsapp),
-      openingHours: [...location.openingHours, "", "", "", ""].slice(0, 7),
-      latitude: String(location?.coordinates?.lat ?? ""),
-      longitude: String(location?.coordinates?.lng ?? ""),
+      name: location.name ?? "",
+      address: location.address ?? "",
+      phone: location.phone ?? "",
+      whatsapp: String(location.whatsapp ?? ""),
+      openingHours: location.openingHours ?? "",
+      latitude: String(location.coordinates?.lat ?? ""),
+      longitude: String(location.coordinates?.lng ?? ""),
     });
 
     setLocationErrors({});
@@ -933,7 +863,6 @@ export default function WebsiteSettings() {
 
     setLocationForm({
       ...EMPTY_LOCATION_FORM,
-      openingHours: [...EMPTY_LOCATION_FORM.openingHours],
     });
 
     setLocationErrors({});
@@ -952,6 +881,8 @@ export default function WebsiteSettings() {
     const whatsapp = locationForm.whatsapp.trim();
     const latitude = locationForm.latitude.trim();
     const longitude = locationForm.longitude.trim();
+
+    console.log(latitude, longitude);
 
     /* NAME */
 
@@ -1007,12 +938,10 @@ export default function WebsiteSettings() {
 
     /* OPENING HOURS */
 
-    const validOpeningHours = locationForm.openingHours
-      .map((hour) => hour.trim())
-      .filter(Boolean);
+    const everydayHours = locationForm.openingHours.trim() ?? "";
 
-    if (validOpeningHours.length === 0) {
-      errors.openingHours = "Add at least one opening-hours entry.";
+    if (!everydayHours) {
+      errors.openingHours = "Opening hours are required.";
     }
 
     setLocationErrors(errors);
@@ -1024,107 +953,160 @@ export default function WebsiteSettings() {
        SAVE LOCATION
   ==================================================================== */
 
-  const handleSaveLocation = (): void => {
+  const handleSaveLocation = async (): Promise<void> => {
     if (!validateLocation()) {
       return;
     }
 
-    const openingHours = locationForm.openingHours
-      .map((hour) => hour.trim())
-      .filter(Boolean);
+    /*
+     * The UI contains only one opening-hours value.
+     *
+     * Convert it to seven values for the backend.
+     */
 
+    /*
+     * EDIT
+     *
+     * Currently your API only has AddLocationMutation in this component.
+     * Therefore we keep the existing local-edit behaviour here.
+     *
+     * When you add an updateLocation mutation, this branch can call
+     * the backend instead.
+     */
     if (editingLocationId) {
-      setLocations((previous) =>
-        previous.map((location) => {
-          if (location.id !== editingLocationId) {
-            return location;
-          }
+      try {
+        const bodyForUpdateLocation: LocationPayload = {
+          id: editingLocationId,
+          name: locationForm.name.trim(),
+          address: locationForm.address.trim(),
+          phone: locationForm.phone.trim(),
+          whatsapp: locationForm.whatsapp.trim(),
+          openingHours: locationForm.openingHours.trim(),
+          coordinates: {
+            lat: Number(locationForm.latitude),
+            lng: Number(locationForm.longitude),
+          },
+        };
 
-          return {
-            ...location,
-            name: locationForm.name.trim(),
-            address: locationForm.address.trim(),
-            phone: locationForm.phone.trim(),
-            whatsapp: locationForm.whatsapp.trim(),
-            openingHours,
-            coordinates: {
-              lat: Number(locationForm.latitude),
-              lng: Number(locationForm.longitude),
-            },
-          };
-        }),
-      );
+        const response = await updateLocation(
+          bodyForUpdateLocation as any,
+        ).unwrap();
+        if (response.success) {
+          refetchLocations();
 
-      closeLocationModal();
+          closeLocationModal();
 
-      setSuccessModal({
-        title: "Location Updated!",
-        message: "The location has been updated successfully.",
-      });
+          setSuccessModal({
+            title: "Location Updated!",
+            message: "The location has been updated successfully.",
+          });
 
-      return;
+          return;
+        } else {
+          showToast(
+            "Failed to update location. Please try again later.",
+            "error",
+          );
+        }
+      } catch (error) {
+        console.error("Error updating location:", error);
+
+        showToast(
+          "Failed to update location. Please try again later.",
+          "error",
+        );
+      }
     }
 
-    const newLocation: Location = {
-      id: createLocationId(locationForm.name, locations),
-      name: locationForm.name.trim(),
-      address: locationForm.address.trim(),
-      phone: locationForm.phone.trim(),
-      whatsapp: locationForm.whatsapp.trim(),
-      openingHours,
-      coordinates: {
-        lat: Number(locationForm.latitude),
-        lng: Number(locationForm.longitude),
-      },
-    };
+    /* ----------------------------------------------------------------
+       ADD LOCATION
+    ---------------------------------------------------------------- */
 
-    setLocations((previous) => [...previous, newLocation]);
+    try {
+      const bodyForAddLocation: LocationPayload = {
+        name: locationForm.name.trim(),
+        address: locationForm.address.trim(),
+        phone: locationForm.phone.trim(),
+        whatsapp: locationForm.whatsapp.trim(),
+        openingHours: locationForm.openingHours.trim(),
+        coordinates: {
+          lat: Number(locationForm.latitude),
+          lng: Number(locationForm.longitude),
+        },
+      };
 
-    closeLocationModal();
+      const response = await addLocation(bodyForAddLocation as any).unwrap();
 
-    setSuccessModal({
-      title: "Location Added!",
-      message: "The new location has been added successfully.",
-    });
+      if (!response.success) {
+        showToast(
+          response.message || "Failed to save location. Please try again.",
+          "error",
+        );
+
+        return;
+      }
+
+      /*
+       * The API response should contain the created Location.
+       *
+       * We use response.data when available.
+       */
+      if (response.success) {
+        await refetchLocations();
+
+        closeLocationModal();
+
+        setSuccessModal({
+          title: "Location Added!",
+          message: "The new location has been added successfully.",
+        });
+      }
+    } catch (error) {
+      console.error("Error adding location:", error);
+
+      showToast("Failed to save location. Please try again later.", "error");
+    }
   };
+
+  /*
+   * Refresh locations after adding a new location.
+   *
+   * We intentionally get refetch from the query instead of relying only
+   * on local state, because the displayed cards use locationsData.
+   */
+  const { refetch: refetchLocations } = useGetLocationsQuery();
 
   /* ====================================================================
        DELETE LOCATION
   ==================================================================== */
 
-  const handleDeleteLocation = (): void => {
+  const handleDeleteLocation = async () => {
     if (!deleteLocation) {
       return;
     }
 
-    setIsDeleting(true);
+    try {
+      const response = await removeLocation(deleteLocation.id).unwrap();
 
-    setTimeout(() => {
-      setLocations((previous) =>
-        previous.filter((location) => location.id !== deleteLocation.id),
-      );
+      if (response.success) {
+        refetchLocations();
 
-      setIsDeleting(false);
-      setDeleteLocation(null);
+        setDeleteLocation(null);
 
-      setSuccessModal({
-        title: "Location Deleted!",
-        message: "The location has been deleted successfully.",
-      });
-    }, 300);
-  };
-
-  /* ====================================================================
-       OPENING HOURS
-  ==================================================================== */
-
-  const updateOpeningHour = (index: number, value: string): void => {
-    setLocationForm((previous) => ({
-      ...previous,
-      openingHours: previous.openingHours.map((hour, hourIndex) =>
-        hourIndex === index ? value : hour,
-      ),
-    }));
+        setSuccessModal({
+          title: "Location Deleted!",
+          message: "The location has been deleted successfully.",
+        });
+      } else {
+        showToast(
+          "Failed to delete location. Please try again later.",
+          "error",
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      showToast("Failed to delete location. Please try again later.", "error");
+    }
   };
 
   /* ====================================================================
@@ -1132,6 +1114,7 @@ export default function WebsiteSettings() {
   ==================================================================== */
 
   const hasLogo = Boolean(logoPreview) || Boolean(websiteSettings.logo);
+
   const hasVideo = Boolean(videoPreview) || Boolean(websiteSettings.video);
 
   if (websiteSettingsLoading) {
@@ -1506,12 +1489,8 @@ export default function WebsiteSettings() {
                 </p>
               </div>
 
-              {/* EXISTING + NEW IMAGES */}
-
               {(sliderImages.length > 0 || sliderPreviews.length > 0) && (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {/* EXISTING */}
-
                   {sliderImages.map((image, index) => (
                     <div
                       key={`existing-${image}-${index}`}
@@ -1539,8 +1518,6 @@ export default function WebsiteSettings() {
                       </span>
                     </div>
                   ))}
-
-                  {/* NEW */}
 
                   {sliderPreviews.map((preview, index) => (
                     <div
@@ -1571,8 +1548,6 @@ export default function WebsiteSettings() {
                   ))}
                 </div>
               )}
-
-              {/* UPLOAD */}
 
               <div className="mt-5">
                 <input
@@ -1616,8 +1591,8 @@ export default function WebsiteSettings() {
             </div>
 
             {/* ====================================================
-    VIDEO
-==================================================== */}
+                VIDEO
+            ==================================================== */}
 
             <div className="border-t border-gray-200 pt-6 dark:border-gray-800">
               <div className="mb-4">
@@ -1775,7 +1750,7 @@ export default function WebsiteSettings() {
           </div>
 
           <div className="p-5 lg:p-6">
-            {locations.length === 0 ? (
+            {locationsData.length === 0 ? (
               <div className="flex min-h-[240px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 px-5 text-center dark:border-gray-700">
                 <MapPin size={22} className="text-gray-400" />
 
@@ -1798,7 +1773,7 @@ export default function WebsiteSettings() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-                {locations.map((location) => (
+                {locationsData.map((location: Location) => (
                   <LocationCard
                     key={location.id}
                     location={location}
@@ -1820,9 +1795,10 @@ export default function WebsiteSettings() {
           form={locationForm}
           errors={locationErrors}
           onChange={setLocationForm}
-          onOpeningHourChange={updateOpeningHour}
           onClose={closeLocationModal}
           onSubmit={handleSaveLocation}
+          loading={addLocationLoading}
+          updateLocationLoading={updateLocationLoading}
         />
       )}
 
@@ -1831,7 +1807,7 @@ export default function WebsiteSettings() {
       {deleteLocation && (
         <DeleteConfirmationModal
           locationName={deleteLocation.name}
-          loading={isDeleting}
+          loading={removeLocationLoading}
           onCancel={() => setDeleteLocation(null)}
           onConfirm={handleDeleteLocation}
         />
@@ -1863,6 +1839,8 @@ function LocationCard({
   onEdit: (location: Location) => void;
   onDelete: (location: Location) => void;
 }) {
+  const everydayHours = "03:00 PM - 03:00 AM";
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white transition hover:border-brand-200 hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:hover:border-brand-500/40">
       <div className="flex items-start justify-between gap-3 border-b border-gray-100 p-4 dark:border-gray-800">
@@ -1917,15 +1895,16 @@ function LocationCard({
         <div className="sm:col-span-2">
           <p className={labelClass}>Opening Hours</p>
 
-          <div className="mt-2 space-y-1">
-            {location.openingHours.map((hour, index) => (
-              <p
-                key={index}
-                className="text-xs text-gray-600 dark:text-gray-400"
-              >
-                {hour}
-              </p>
-            ))}
+          <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800/60">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                Everyday
+              </span>
+
+              <span className="text-xs text-gray-700 dark:text-gray-300">
+                {everydayHours}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1933,7 +1912,7 @@ function LocationCard({
           <p className={labelClass}>Coordinates</p>
 
           <p className="mt-1 break-all font-mono text-xs text-gray-600 dark:text-gray-400">
-            {location?.coordinates?.lat}, {location?.coordinates?.lng}
+            {location.coordinates?.lat}, {location.coordinates?.lng}
           </p>
         </div>
       </div>
@@ -1950,23 +1929,25 @@ function LocationModal({
   form,
   errors,
   onChange,
-  onOpeningHourChange,
   onClose,
   onSubmit,
+  loading,
+  updateLocationLoading,
 }: {
   editing: boolean;
   form: LocationForm;
   errors: FormErrors;
   onChange: React.Dispatch<React.SetStateAction<LocationForm>>;
-  onOpeningHourChange: (index: number, value: string) => void;
   onClose: () => void;
   onSubmit: () => void;
+  loading: boolean;
+  updateLocationLoading: boolean;
 }) {
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto p-3 sm:p-4">
       <div
         className="fixed inset-0 bg-gray-950/40 backdrop-blur-md dark:bg-black/60"
-        onClick={onClose}
+        onClick={loading ? undefined : onClose}
       />
 
       <div className="relative my-auto flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900 sm:rounded-3xl">
@@ -1986,7 +1967,8 @@ function LocationModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+            disabled={loading}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-800 dark:hover:text-gray-200"
           >
             <X size={18} />
           </button>
@@ -2056,38 +2038,30 @@ function LocationModal({
               />
             </Field>
 
-            <Field label="Latitude" required error={errors.latitude}>
-              <input
-                type="number"
-                step="any"
-                value={form.latitude}
-                onChange={(event) =>
+            <div className="sm:col-span-2">
+              <LocationPicker
+                latitude={form.latitude ? Number(form.latitude) : null}
+                longitude={form.longitude ? Number(form.longitude) : null}
+                onChange={(latitude, longitude) => {
                   onChange((previous) => ({
                     ...previous,
-                    latitude: event.target.value,
-                  }))
-                }
-                placeholder="40.7128"
-                className={inputClass}
+                    latitude: String(latitude),
+                    longitude: String(longitude),
+                  }));
+                }}
               />
-            </Field>
 
-            <Field label="Longitude" required error={errors.longitude}>
-              <input
-                type="number"
-                step="any"
-                value={form.longitude}
-                onChange={(event) =>
-                  onChange((previous) => ({
-                    ...previous,
-                    longitude: event.target.value,
-                  }))
-                }
-                placeholder="-74.0060"
-                className={inputClass}
-              />
-            </Field>
+              {(errors.latitude || errors.longitude) && (
+                <p className="mt-1 text-xs text-error-500">
+                  {errors.latitude || errors.longitude}
+                </p>
+              )}
+            </div>
           </div>
+
+          {/* ====================================================
+              EVERYDAY OPENING HOURS
+          ==================================================== */}
 
           <div className="mt-6">
             <div className="mb-3">
@@ -2096,31 +2070,37 @@ function LocationModal({
               </label>
 
               <p className="mt-1 text-xs text-gray-400">
-                Enter the opening hours exactly as you want them displayed.
+                Enter the opening hours for every day.
               </p>
             </div>
 
-            <div className="space-y-3">
-              {DAYS.map((day, index) => (
-                <div
-                  key={day}
-                  className="grid grid-cols-1 gap-2 sm:grid-cols-[120px_1fr]"
-                >
-                  <div className="flex h-11 items-center rounded-lg bg-gray-50 px-3 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                    {day}
-                  </div>
-
-                  <input
-                    type="text"
-                    value={form.openingHours[index] || ""}
-                    onChange={(event) =>
-                      onOpeningHourChange(index, event.target.value)
-                    }
-                    placeholder="e.g. 11:00 – 22:00"
-                    className={inputClass}
-                  />
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/40">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[120px_1fr] sm:items-center">
+                <div className="flex h-11 items-center rounded-lg bg-white px-3 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                  Everyday
                 </div>
-              ))}
+
+                <input
+                  type="text"
+                  value={form.openingHours}
+                  onChange={(event) =>
+                    onChange((previous) => ({
+                      ...previous,
+                      openingHours: event.target.value,
+                    }))
+                  }
+                  placeholder="e.g. 03:00 PM - 03:00 AM"
+                  className={
+                    errors.openingHours
+                      ? `${inputClass} border-error-500 focus:border-error-500 focus:ring-error-500/10`
+                      : inputClass
+                  }
+                />
+              </div>
+
+              <p className="mt-3 text-xs text-gray-400">
+                This schedule will be applied to Monday through Sunday.
+              </p>
             </div>
 
             {errors.openingHours && (
@@ -2135,7 +2115,8 @@ function LocationModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-gray-300 px-5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:w-auto dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            disabled={loading}
+            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-gray-300 px-5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             Cancel
           </button>
@@ -2143,11 +2124,21 @@ function LocationModal({
           <button
             type="button"
             onClick={onSubmit}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto"
+            disabled={loading || updateLocationLoading}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
-            <Check size={17} />
+            {loading || updateLocationLoading ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                {editing ? "Updating..." : "Adding..."}
+              </>
+            ) : (
+              <>
+                <Check size={17} />
 
-            {editing ? "Update Location" : "Add Location"}
+                {editing ? "Update Location" : "Add Location"}
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -2370,27 +2361,4 @@ function isValidLongitude(value: string): boolean {
   const number = Number(value);
 
   return Number.isFinite(number) && number >= -180 && number <= 180;
-}
-
-/* ========================================================================
-   LOCATION ID
-======================================================================== */
-
-function createLocationId(name: string, existingLocations: Location[]): string {
-  const base =
-    name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "location";
-
-  let id = base;
-  let counter = 1;
-
-  while (existingLocations.some((location) => location.id === id)) {
-    id = `${base}-${counter}`;
-    counter++;
-  }
-
-  return id;
 }

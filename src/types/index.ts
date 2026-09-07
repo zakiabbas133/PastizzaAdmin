@@ -73,7 +73,7 @@ export interface Location {
   address: string;
   phone: string;
   whatsapp?: string;
-  openingHours: string[];
+  openingHours: string;
   coordinates?: {
     lat: number;
     lng: number;
