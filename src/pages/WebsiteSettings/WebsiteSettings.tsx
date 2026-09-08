@@ -882,8 +882,6 @@ export default function WebsiteSettings() {
     const latitude = locationForm.latitude.trim();
     const longitude = locationForm.longitude.trim();
 
-    console.log(latitude, longitude);
-
     /* NAME */
 
     if (!name) {
@@ -1104,7 +1102,7 @@ export default function WebsiteSettings() {
         );
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
       showToast("Failed to delete location. Please try again later.", "error");
     }
   };

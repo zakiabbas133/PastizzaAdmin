@@ -360,7 +360,6 @@ export default function Deals() {
                       {/* ITEMS */}
                       <div className="mt-4 space-y-1.5">
                         {deal?.dealItems?.slice(0, 3).map((item) => {
-                          console.log(deal)
                           return (
                             <div
                               key={item.id}
