@@ -1,8 +1,9 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft,
   ArrowRight,
   Check,
+  ChevronRight,
+  Minus,
   Plus,
   Trash2,
   Upload,
@@ -15,6 +16,11 @@ import { useGetMenuItemsQuery } from "../../services/menuApi";
 import Select from "react-select";
 import Toast from "../../components/toast/Toast";
 
+interface DealItemSelection {
+  menuItemId: string;
+  quantity: number;
+}
+
 interface DealForm {
   title: string;
   description: string;
@@ -23,7 +29,7 @@ interface DealForm {
   price: string;
   originalPrice: string;
   badge: string;
-  items: string[];
+  items: DealItemSelection[];
   featured: boolean;
 }
 
@@ -44,9 +50,13 @@ const EMPTY_FORM: DealForm = {
   price: "",
   originalPrice: "",
   badge: "",
-  items: [""],
+  items: [],
   featured: false,
 };
+
+/* ================================================================
+   SUCCESS MODAL
+================================================================ */
 
 function SuccessModal({
   dealName,
@@ -115,13 +125,11 @@ function SuccessModal({
 
             {/* TEXT */}
             <div className="mt-5 text-center sm:mt-7">
-              {/* Badge */}
               <div className="mb-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-1 text-[11px] font-medium text-success-600 sm:px-3 sm:text-xs dark:bg-success-500/10 dark:text-success-400">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success-500" />
                 Successfully Added
               </div>
 
-              {/* Title */}
               <h2
                 id="success-modal-title"
                 className="px-2 text-xl font-semibold tracking-tight text-gray-800 sm:text-2xl dark:text-white"
@@ -129,7 +137,6 @@ function SuccessModal({
                 Deal Added Successfully!
               </h2>
 
-              {/* Description */}
               <p className="mx-auto mt-2 max-w-sm px-1 text-xs leading-5 text-gray-500 sm:text-sm sm:leading-6 dark:text-gray-400">
                 Your new deal{" "}
                 <span className="font-semibold text-gray-700 dark:text-gray-200">
@@ -141,12 +148,10 @@ function SuccessModal({
 
             {/* DEAL PREVIEW */}
             <div className="mt-5 flex min-w-0 items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/80 p-2.5 sm:mt-6 sm:gap-3 sm:p-3 dark:border-gray-800 dark:bg-gray-800/50">
-              {/* Icon */}
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-success-500 shadow-sm sm:h-10 sm:w-10 dark:bg-gray-800">
                 <Utensils size={17} className="sm:h-[18px] sm:w-[18px]" />
               </div>
 
-              {/* Text */}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-medium text-gray-800 sm:text-sm dark:text-white/90">
                   {dealName}
@@ -157,7 +162,6 @@ function SuccessModal({
                 </p>
               </div>
 
-              {/* Check */}
               <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success-500 text-white sm:h-6 sm:w-6">
                 <Check
                   size={11}
@@ -169,7 +173,6 @@ function SuccessModal({
 
             {/* ACTIONS */}
             <div className="mt-5 space-y-2 sm:mt-6 sm:space-y-2.5">
-              {/* View Deals */}
               <button
                 type="button"
                 onClick={onViewDeals}
@@ -182,7 +185,6 @@ function SuccessModal({
                 />
               </button>
 
-              {/* Add Another */}
               <button
                 type="button"
                 onClick={onAddAnother}
@@ -193,7 +195,6 @@ function SuccessModal({
               </button>
             </div>
 
-            {/* FOOTNOTE */}
             <p className="mt-4 text-center text-[10px] leading-4 text-gray-400 sm:mt-5 sm:text-xs">
               You can edit this deal anytime from your deals dashboard.
             </p>
@@ -203,6 +204,10 @@ function SuccessModal({
     </div>
   );
 }
+
+/* ================================================================
+   MAIN COMPONENT
+================================================================ */
 
 export default function CreateDeal() {
   const navigate = useNavigate();
@@ -216,6 +221,10 @@ export default function CreateDeal() {
 
   const [addOrUpdateDeal, { isLoading: isSaving }] =
     useAddOrUpdateDealMutation();
+
+  // ============================================================
+  // STATE
+  // ============================================================
 
   const [form, setForm] = useState<DealForm>(EMPTY_FORM);
 
@@ -239,9 +248,48 @@ export default function CreateDeal() {
 
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const menuItemsSelectData = menuItems.map((x) => {
-    return { value: x.id, label: x.name };
-  });
+  // ============================================================
+  // SELECT OPTIONS
+  // ============================================================
+
+  const menuItemsSelectData = menuItems.map((item) => ({
+    value: item.id,
+    label: item.name,
+  }));
+
+  // ============================================================
+  // SELECTED ITEMS
+  // ============================================================
+
+  const selectedMenuItems = form.items
+    .map((selection) => {
+      const menuItem = menuItems.find(
+        (item) => item.id === selection.menuItemId,
+      );
+
+      if (!menuItem) {
+        return null;
+      }
+
+      return {
+        ...menuItem,
+        quantity: selection.quantity,
+      };
+    })
+    .filter(Boolean) as Array<
+    (typeof menuItems)[number] & {
+      quantity: number;
+    }
+  >;
+
+  // ============================================================
+  // TOTAL QUANTITY
+  // ============================================================
+
+  const totalIncludedItems = form.items.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  );
 
   // ============================================================
   // IMAGE PREVIEW
@@ -263,17 +311,10 @@ export default function CreateDeal() {
   }, [form.imageFile]);
 
   // ============================================================
-  // IMAGE CHANGE
+  // TOAST
   // ============================================================
 
-  /*
-   * ============================================================
-   * TOAST
-   * ============================================================
-   */
-
   const showToast = (message: string, type: "success" | "error") => {
-    // Clear previous timeout
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
     }
@@ -306,6 +347,10 @@ export default function CreateDeal() {
     }));
   };
 
+  // ============================================================
+  // IMAGE CHANGE
+  // ============================================================
+
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
@@ -323,7 +368,6 @@ export default function CreateDeal() {
       return;
     }
 
-    // 5 MB limit
     if (file.size > 5 * 1024 * 1024) {
       setErrors((previous) => ({
         ...previous,
@@ -365,11 +409,30 @@ export default function CreateDeal() {
     }));
   };
 
+  // ============================================================
+  // ITEM SELECTION
+  // ============================================================
+
   const handleItemSelection = (selectedValues: string[]) => {
-    setForm((previous) => ({
-      ...previous,
-      items: selectedValues,
-    }));
+    setForm((previous) => {
+      const newItems: DealItemSelection[] = selectedValues.map((menuItemId) => {
+        const existingItem = previous.items.find(
+          (item) => item.menuItemId === menuItemId,
+        );
+
+        return (
+          existingItem || {
+            menuItemId,
+            quantity: 1,
+          }
+        );
+      });
+
+      return {
+        ...previous,
+        items: newItems,
+      };
+    });
 
     setErrors((previous) => ({
       ...previous,
@@ -377,9 +440,52 @@ export default function CreateDeal() {
     }));
   };
 
-  const selectedMenuItems = form.items
-    .map((itemId) => menuItems.find((menuItem) => menuItem.id === itemId))
-    .filter(Boolean) as typeof menuItems;
+  // ============================================================
+  // INCREASE QUANTITY
+  // ============================================================
+
+  const increaseQuantity = (menuItemId: string) => {
+    setForm((previous) => ({
+      ...previous,
+      items: previous.items.map((item) =>
+        item.menuItemId === menuItemId
+          ? {
+              ...item,
+              quantity: item.quantity + 1,
+            }
+          : item,
+      ),
+    }));
+  };
+
+  // ============================================================
+  // DECREASE QUANTITY
+  // ============================================================
+
+  const decreaseQuantity = (menuItemId: string) => {
+    setForm((previous) => ({
+      ...previous,
+      items: previous.items.map((item) =>
+        item.menuItemId === menuItemId
+          ? {
+              ...item,
+              quantity: Math.max(1, item.quantity - 1),
+            }
+          : item,
+      ),
+    }));
+  };
+
+  // ============================================================
+  // REMOVE INCLUDED ITEM
+  // ============================================================
+
+  const removeIncludedItem = (menuItemId: string) => {
+    setForm((previous) => ({
+      ...previous,
+      items: previous.items.filter((item) => item.menuItemId !== menuItemId),
+    }));
+  };
 
   // ============================================================
   // VALIDATE FORM
@@ -460,24 +566,33 @@ export default function CreateDeal() {
     // INCLUDED ITEMS
     // --------------------------------------------------------
 
-    const validItems = form.items.map((item) => item.trim()).filter(Boolean);
-
-    if (!validItems.length) {
+    if (!form.items.length) {
       newErrors.items = "At least one menu item must be selected.";
+    } else if (
+      form.items.some(
+        (item) =>
+          !item.menuItemId ||
+          !Number.isInteger(item.quantity) ||
+          item.quantity < 1,
+      )
+    ) {
+      newErrors.items =
+        "Each included item must have a quantity of at least 1.";
     }
 
     return newErrors;
   };
 
+  // ============================================================
+  // BUILD DEAL ITEMS PAYLOAD
+  // ============================================================
+
   const buildDealItemsPayload = () =>
-    form.items
-      .map((menuItemId) => menuItemId.trim())
-      .filter(Boolean)
-      .map((menuItemId, index) => ({
-        MenuItemId: menuItemId,
-        Quantity: 1,
-        DisplayOrder: index + 1,
-      }));
+    form.items.map((item, index) => ({
+      MenuItemId: item.menuItemId,
+      Quantity: item.quantity,
+      DisplayOrder: index + 1,
+    }));
 
   // ============================================================
   // HANDLE SUBMIT
@@ -497,9 +612,9 @@ export default function CreateDeal() {
     }
 
     try {
-      // ====================================================
+      // ========================================================
       // CREATE FORMDATA
-      // ====================================================
+      // ========================================================
 
       const formData = new FormData();
 
@@ -517,45 +632,38 @@ export default function CreateDeal() {
 
       formData.append("Featured", form.featured.toString());
 
-      // New deals are active by default
       formData.append("IsActive", "true");
 
-      // First deal gets display order 1.
-      // You can change this later when
-      // implementing deal ordering.
       formData.append("DisplayOrder", "1");
 
-      // ====================================================
+      // ========================================================
       // DEAL ITEMS
-      // ====================================================
-      // The backend expects an array of objects with MenuItemId,
-      // MenuItemVariantId, Quantity, and DisplayOrder.
-      // ====================================================
+      // ========================================================
 
       const dealItems = buildDealItemsPayload();
 
       formData.append("DealItems", JSON.stringify(dealItems));
 
-      // ====================================================
+      // ========================================================
       // IMAGE
-      // ====================================================
+      // ========================================================
 
       if (form.imageFile) {
         formData.append("Image", form.imageFile);
       }
 
-      // Add request explicitly says no image removal
       formData.append("RemoveImage", "false");
 
-      // ====================================================
+      // ========================================================
       // API CALL
-      // ====================================================
+      // ========================================================
 
       const response = await addOrUpdateDeal(formData).unwrap();
 
-      // ====================================================
+      // ========================================================
       // SUCCESS
-      // ====================================================
+      // ========================================================
+
       if (response.success) {
         setCreatedDealName(form.title.trim());
 
@@ -563,10 +671,6 @@ export default function CreateDeal() {
       }
     } catch (error: any) {
       console.error("Error creating deal:", error);
-      showToast(error.data.message, "error");
-      // ====================================================
-      // API ERROR
-      // ====================================================
 
       let message = "Something went wrong while creating the deal.";
 
@@ -577,6 +681,8 @@ export default function CreateDeal() {
       } else if (error?.error) {
         message = error.error;
       }
+
+      showToast(message, "error");
 
       setErrors((previous) => ({
         ...previous,
@@ -592,7 +698,7 @@ export default function CreateDeal() {
   const resetForm = () => {
     setForm({
       ...EMPTY_FORM,
-      items: [""],
+      items: [],
     });
 
     setErrors({});
@@ -634,11 +740,15 @@ export default function CreateDeal() {
         : "border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700"
     }`;
 
+  // ============================================================
+  // RENDER
+  // ============================================================
+
   return (
     <>
       {/* =====================================================
-              TOAST
-          ===================================================== */}
+          TOAST
+      ===================================================== */}
 
       <Toast
         show={toast.show}
@@ -647,22 +757,42 @@ export default function CreateDeal() {
         onClose={hideToast}
       />
 
-      <div className="mx-auto w-full max-w-5xl">
-        {/* =========================================================
-                    HEADER
-                ========================================================= */}
+      <div className="mx-auto w-full">
+        {/* =====================================================
+            HEADER
+        ===================================================== */}
 
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-          <Link
-            to="/deals"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-          >
-            <ArrowLeft size={18} />
-          </Link>
+        {/* <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
 
           <div>
             <h1 className="text-title-md font-semibold text-gray-800 dark:text-white/90">
-              Create Deal
+              Create Dealllll
+            </h1>
+
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Create a new promotional deal for your customers.
+            </p>
+          </div>
+        </div> */}
+
+        <div>
+          <div className="mb-2 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <span>Home</span>
+
+            <ChevronRight size={15} />
+
+            <span>Deals</span>
+
+            <ChevronRight size={15} />
+
+            <span className="text-gray-800 dark:text-white/90">
+              Add Deal
+            </span>
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
+              Add Deal
             </h1>
 
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -671,11 +801,11 @@ export default function CreateDeal() {
           </div>
         </div>
 
-        {/* =========================================================
-                    FORM CARD
-                ========================================================= */}
+        {/* =====================================================
+            FORM CARD
+        ===================================================== */}
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           {/* HEADER */}
 
           <div className="border-b border-gray-200 px-5 py-5 lg:px-6 dark:border-gray-800">
@@ -691,16 +821,21 @@ export default function CreateDeal() {
           {/* FORM BODY */}
 
           <div className="grid grid-cols-1 gap-6 p-5 lg:grid-cols-2 lg:p-6">
+            {/* =================================================
+                GENERAL ERROR
+            ================================================= */}
+
             {errors.title && (
-              <div className="flex items-start gap-3 rounded-xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-600 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+              <div className="flex items-start gap-3 rounded-xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-600 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400 lg:col-span-2">
                 <X size={18} className="mt-0.5 shrink-0" />
 
                 <p>{errors.title}</p>
               </div>
             )}
+
             {/* =================================================
-                            TITLE
-                        ================================================= */}
+                TITLE
+            ================================================= */}
 
             <div className="lg:col-span-2">
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -725,24 +860,11 @@ export default function CreateDeal() {
                 placeholder="e.g. Fire Duo"
                 className={inputClass(!!errors.title)}
               />
-
-              {/* <div className="mt-1.5 flex items-center justify-between gap-2">
-                {errors.title ? (
-                  <p className="text-xs text-error-500">{errors.title}</p>
-                ) : (
-                  <span />
-                )}
-
-                <span className="text-xs text-gray-400">
-                  {form.title.length}
-                  /100
-                </span>
-              </div> */}
             </div>
 
             {/* =================================================
-                            DESCRIPTION
-                        ================================================= */}
+                DESCRIPTION
+            ================================================= */}
 
             <div className="lg:col-span-2">
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -776,15 +898,14 @@ export default function CreateDeal() {
                 )}
 
                 <span className="text-xs text-gray-400">
-                  {form.description.length}
-                  /500
+                  {form.description.length}/500
                 </span>
               </div>
             </div>
 
             {/* =================================================
-                            PRICE
-                        ================================================= */}
+                PRICE
+            ================================================= */}
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -824,8 +945,8 @@ export default function CreateDeal() {
             </div>
 
             {/* =================================================
-                            ORIGINAL PRICE
-                        ================================================= */}
+                ORIGINAL PRICE
+            ================================================= */}
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -866,8 +987,8 @@ export default function CreateDeal() {
             </div>
 
             {/* =================================================
-                            BADGE
-                        ================================================= */}
+                BADGE
+            ================================================= */}
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -894,8 +1015,8 @@ export default function CreateDeal() {
             </div>
 
             {/* =================================================
-                            FEATURED
-                        ================================================= */}
+                FEATURED
+            ================================================= */}
 
             <div className="flex items-end">
               <label className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-4 rounded-lg border border-gray-300 px-4 py-2 dark:border-gray-700">
@@ -924,8 +1045,8 @@ export default function CreateDeal() {
             </div>
 
             {/* =================================================
-                            IMAGE
-                        ================================================= */}
+                IMAGE
+            ================================================= */}
 
             <div className="lg:col-span-2">
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1015,20 +1136,37 @@ export default function CreateDeal() {
             </div>
 
             {/* =================================================
-                            ITEMS
-                        ================================================= */}
+                INCLUDED ITEMS
+            ================================================= */}
 
             <div className="lg:col-span-2">
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Included Items <span className="text-error-500">*</span>
-                </label>
+              <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Included Items <span className="text-error-500">*</span>
+                  </label>
 
-                <p className="mt-1 text-xs text-gray-400">
-                  Select all menu items included in this deal.
-                </p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Select the food items included in this deal, then adjust
+                    their quantities.
+                  </p>
+                </div>
+
+                {/* TOTAL */}
+                {form.items.length > 0 && (
+                  <div className="inline-flex w-fit items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300">
+                    <Utensils size={14} />
+                    {form.items.length}{" "}
+                    {form.items.length === 1 ? "item" : "items"}
+                    <span className="text-brand-300 dark:text-brand-500">
+                      •
+                    </span>
+                    {totalIncludedItems} total
+                  </div>
+                )}
               </div>
 
+              {/* SELECT */}
               <div
                 className={`rounded-xl border bg-transparent shadow-sm transition ${
                   errors.items
@@ -1036,76 +1174,165 @@ export default function CreateDeal() {
                     : "border-gray-300 focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/10 dark:border-gray-700"
                 }`}
               >
-                <div className="flex min-h-[56px] flex-wrap items-center gap-2 border-b border-gray-200 bg-gray-50/70 px-3 py-2 dark:border-gray-700 dark:bg-gray-900/60">
-                  {selectedMenuItems.length > 0 ? (
-                    selectedMenuItems.map((menuItem) => (
-                      <span
-                        key={menuItem.id}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/15"
-                      >
-                        {menuItem.name}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-sm text-gray-400 dark:text-gray-500">
-                      Select menu items...
-                    </span>
-                  )}
-                </div>
-
-                {/* <select
-                  multiple
-                  value={form.items}
-                  disabled={menuItemsLoading || menuItems.length === 0}
-                  onChange={(event) => {
-                    const selectedValues = Array.from(
-                      event.target.selectedOptions,
-                      (option) => option.value,
-                    );
-
-                    handleItemSelection(selectedValues);
-                  }}
-                  className="min-h-[150px] w-full border-0 bg-transparent px-3 py-2 text-sm text-gray-800 outline-none dark:bg-gray-900 dark:text-white/90"
-                >
-                  {menuItems.length === 0 && !menuItemsLoading && (
-                    <option value="" disabled>
-                      No menu items available
-                    </option>
-                  )}
-
-                  {menuItems.map((menuItem) => (
-                    <option key={menuItem.id} value={menuItem.id}>
-                      {menuItem.name}
-                    </option>
-                  ))}
-                </select> */}
                 <Select
                   options={menuItemsSelectData}
                   isMulti
-                  className="basic-multi-select w-full border-0 bg-transparent p-2 text-sm text-gray-800 outline-none dark:bg-gray-900 dark:text-white/90"
-                  classNamePrefix="select"
-                  placeholder="Select 1 or more food items"
+                  value={menuItemsSelectData.filter((option) =>
+                    form.items.some((item) => item.menuItemId === option.value),
+                  )}
+                  isLoading={menuItemsLoading}
                   isDisabled={menuItemsLoading || menuItems.length === 0}
                   onChange={(data) => {
-                    const selectedValues = Array.from(
-                      data,
-                      (option) => option.value,
-                    );
+                    const selectedValues = data.map((option) => option.value);
 
                     handleItemSelection(selectedValues);
                   }}
+                  placeholder="Select 1 or more food items"
+                  className="basic-multi-select w-full border-0 bg-transparent text-sm text-gray-800 outline-none dark:bg-gray-900 dark:text-white/90"
+                  classNamePrefix="select"
                 />
               </div>
 
               {errors.items && (
                 <p className="mt-1.5 text-xs text-error-500">{errors.items}</p>
               )}
+
+              {/* =================================================
+                  SELECTED ITEM CARDS
+              ================================================= */}
+
+              {selectedMenuItems.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {selectedMenuItems.map((menuItem, index) => (
+                    <div
+                      key={menuItem.id}
+                      className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md sm:p-4 dark:border-gray-700 dark:bg-gray-900/70 dark:hover:border-brand-500/30"
+                    >
+                      {/* subtle background decoration */}
+                      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-brand-500/5 blur-2xl" />
+
+                      <div className="relative flex items-center gap-3 sm:gap-4">
+                        {/* NUMBER */}
+                        <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-xs font-semibold text-gray-500 sm:flex dark:bg-gray-800 dark:text-gray-400">
+                          {String(index + 1).padStart(2, "0")}
+                        </div>
+
+                        {/* ITEM IMAGE */}
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
+                          {menuItem.image ? (
+                            <img
+                              src={menuItem.image}
+                              alt={menuItem.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Utensils size={21} className="text-gray-400" />
+                          )}
+                        </div>
+
+                        {/* ITEM INFO */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="truncate text-sm font-semibold text-gray-800 dark:text-white">
+                              {menuItem.name}
+                            </h3>
+
+                            {/* quantity badge */}
+                            <span className="hidden shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-600 sm:inline-flex dark:bg-brand-500/10 dark:text-brand-300">
+                              × {menuItem.quantity}
+                            </span>
+                          </div>
+
+                          <p className="mt-1 text-xs text-gray-400">
+                            Included in deal
+                          </p>
+                        </div>
+
+                        {/* QUANTITY CONTROL */}
+                        <div className="flex shrink-0 items-center rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
+                          <button
+                            type="button"
+                            onClick={() => decreaseQuantity(menuItem.id)}
+                            disabled={menuItem.quantity <= 1}
+                            aria-label={`Decrease ${menuItem.name} quantity`}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-white hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                          >
+                            <Minus size={15} />
+                          </button>
+
+                          <div className="flex min-w-[34px] items-center justify-center">
+                            <span className="text-sm font-bold text-gray-800 dark:text-white">
+                              {menuItem.quantity}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => increaseQuantity(menuItem.id)}
+                            aria-label={`Increase ${menuItem.name} quantity`}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white shadow-sm transition hover:bg-brand-600 active:scale-95"
+                          >
+                            <Plus size={15} />
+                          </button>
+                        </div>
+
+                        {/* REMOVE */}
+                        <button
+                          type="button"
+                          onClick={() => removeIncludedItem(menuItem.id)}
+                          aria-label={`Remove ${menuItem.name}`}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-error-50 hover:text-error-500 dark:hover:bg-error-500/10"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* EMPTY STATE */}
+              {!menuItemsLoading &&
+                menuItems.length > 0 &&
+                selectedMenuItems.length === 0 && (
+                  <div className="mt-4 flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 px-5 py-10 text-center dark:border-gray-700 dark:bg-gray-900/40">
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm dark:bg-gray-800">
+                      <Utensils size={21} />
+                    </div>
+
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      No items selected yet
+                    </p>
+
+                    <p className="mt-1 max-w-sm text-xs leading-5 text-gray-400">
+                      Select menu items above to add them to this deal and
+                      choose how many of each item customers will receive.
+                    </p>
+                  </div>
+                )}
+
+              {/* NO MENU ITEMS */}
+              {!menuItemsLoading && menuItems.length === 0 && (
+                <div className="mt-4 flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 px-5 py-10 text-center dark:border-gray-700 dark:bg-gray-900/40">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm dark:bg-gray-800">
+                    <Utensils size={21} />
+                  </div>
+
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    No menu items available
+                  </p>
+
+                  <p className="mt-1 max-w-sm text-xs leading-5 text-gray-400">
+                    Add menu items first before creating a deal.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* =====================================================
-                        FOOTER
-                    ===================================================== */}
+              FOOTER
+          ===================================================== */}
 
           <div className="flex flex-col-reverse gap-3 border-t border-gray-200 px-5 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-gray-800">
             <Link
@@ -1138,8 +1365,8 @@ export default function CreateDeal() {
       </div>
 
       {/* =============================================================
-                SUCCESS MODAL
-            ============================================================= */}
+          SUCCESS MODAL
+      ============================================================= */}
 
       {showSuccessModal && (
         <SuccessModal

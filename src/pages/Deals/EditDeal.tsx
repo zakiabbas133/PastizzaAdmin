@@ -3,6 +3,9 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  ChevronRight,
+  Minus,
+  Plus,
   Trash2,
   Upload,
   Utensils,
@@ -19,6 +22,15 @@ import { baseUrl } from "../../services/api";
 import Select from "react-select";
 import Toast from "../../components/toast/Toast";
 
+/* ================================================================
+   TYPES
+================================================================ */
+
+interface DealItemSelection {
+  menuItemId: string;
+  quantity: number;
+}
+
 interface DealForm {
   title: string;
   description: string;
@@ -27,7 +39,7 @@ interface DealForm {
   price: string;
   originalPrice: string;
   badge: string;
-  items: string[];
+  items: DealItemSelection[];
   featured: boolean;
 }
 
@@ -40,23 +52,182 @@ interface FormErrors {
   items?: string;
 }
 
+/* ================================================================
+   SUCCESS MODAL
+================================================================ */
+
+function SuccessModal({
+  dealName,
+  onViewDeals,
+  onClose,
+}: {
+  dealName: string;
+  onViewDeals: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto p-3 sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="success-modal-title"
+    >
+      {/* BACKDROP */}
+      <div
+        className="fixed inset-0 bg-gray-950/40 backdrop-blur-md dark:bg-black/60"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* MODAL */}
+      <div className="relative my-auto flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/70 bg-white shadow-2xl dark:border-gray-700/80 dark:bg-gray-900 sm:rounded-3xl">
+        {/* DECORATIVE BACKGROUND */}
+        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-success-500/10 blur-3xl sm:-right-20 sm:-top-20 sm:h-48 sm:w-48" />
+
+        <div className="pointer-events-none absolute -bottom-20 -left-12 h-40 w-40 rounded-full bg-brand-500/10 blur-3xl sm:-bottom-24 sm:-left-16 sm:h-48 sm:w-48" />
+
+        {/* CLOSE */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-2.5 top-2.5 z-20 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 sm:right-4 sm:top-4 sm:h-9 sm:w-9 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+        >
+          <X size={17} />
+        </button>
+
+        {/* CONTENT */}
+        <div className="relative min-h-0 overflow-y-auto overscroll-contain">
+          <div className="px-4 pb-5 pt-7 sm:px-7 sm:pb-7 sm:pt-9 md:px-8 md:pb-8">
+            {/* SUCCESS ICON */}
+            <div className="flex justify-center">
+              <div className="relative">
+                <div className="absolute inset-0 scale-125 rounded-full bg-success-500/20 blur-xl" />
+
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-success-50 ring-6 ring-success-50/60 sm:h-20 sm:w-20 sm:ring-8 dark:bg-success-500/10 dark:ring-success-500/5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success-500 text-white shadow-lg shadow-success-500/30 sm:h-14 sm:w-14">
+                    <Check
+                      size={24}
+                      strokeWidth={3}
+                      className="sm:h-[30px] sm:w-[30px]"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* TEXT */}
+            <div className="mt-5 text-center sm:mt-7">
+              <div className="mb-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-1 text-[11px] font-medium text-success-600 sm:px-3 sm:text-xs dark:bg-success-500/10 dark:text-success-400">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success-500" />
+                Successfully Updated
+              </div>
+
+              <h2
+                id="success-modal-title"
+                className="px-2 text-xl font-semibold tracking-tight text-gray-800 sm:text-2xl dark:text-white"
+              >
+                Deal Updated Successfully!
+              </h2>
+
+              <p className="mx-auto mt-2 max-w-sm px-1 text-xs leading-5 text-gray-500 sm:text-sm sm:leading-6 dark:text-gray-400">
+                Your deal{" "}
+                <span className="font-semibold text-gray-700 dark:text-gray-200">
+                  “{dealName}”
+                </span>{" "}
+                has been updated successfully.
+              </p>
+            </div>
+
+            {/* DEAL PREVIEW */}
+            <div className="mt-5 flex min-w-0 items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/80 p-2.5 sm:mt-6 sm:gap-3 sm:p-3 dark:border-gray-800 dark:bg-gray-800/50">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-success-500 shadow-sm sm:h-10 sm:w-10 dark:bg-gray-800">
+                <Utensils size={17} />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium text-gray-800 sm:text-sm dark:text-white/90">
+                  {dealName}
+                </p>
+
+                <p className="mt-0.5 truncate text-[10px] text-gray-400 sm:text-xs">
+                  Available in your deals
+                </p>
+              </div>
+
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success-500 text-white sm:h-6 sm:w-6">
+                <Check size={11} strokeWidth={3} />
+              </div>
+            </div>
+
+            {/* ACTION */}
+            <div className="mt-5 sm:mt-6">
+              <button
+                type="button"
+                onClick={onViewDeals}
+                className="group flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-xs font-medium text-white shadow-sm shadow-brand-500/20 transition hover:bg-brand-600 hover:shadow-md sm:h-11 sm:px-5 sm:text-sm"
+              >
+                View Deals
+                <ArrowRight
+                  size={15}
+                  className="transition-transform group-hover:translate-x-0.5"
+                />
+              </button>
+            </div>
+
+            <p className="mt-4 text-center text-[10px] leading-4 text-gray-400 sm:mt-5 sm:text-xs">
+              You can edit this deal anytime from your deals dashboard.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================
+   MAIN COMPONENT
+================================================================ */
+
 export default function EditDeal() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // ============================================================
+  // RTK QUERY
+  // ============================================================
+
   const { data, isLoading: dealsLoading } = useGetDealsQuery();
+
   const { data: menuItems = [], isLoading: menuItemsLoading } =
     useGetMenuItemsQuery();
 
   const [addOrUpdateDeal, { isLoading: isSaving }] =
     useAddOrUpdateDealMutation();
 
+  // ============================================================
+  // DEAL
+  // ============================================================
+
   const dealData = Array.isArray(data?.data) ? (data.data as Deal[]) : [];
+
   const deal = dealData.find((item) => item.id === id);
 
+  // ============================================================
+  // FORM
+  // ============================================================
+
   const [form, setForm] = useState<DealForm | null>(null);
+
   const [errors, setErrors] = useState<FormErrors>({});
+
   const [imagePreview, setImagePreview] = useState("");
+
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // ============================================================
+  // TOAST
+  // ============================================================
 
   const [toast, setToast] = useState<{
     show: boolean;
@@ -70,18 +241,104 @@ export default function EditDeal() {
 
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ============================================================
+  // MENU SELECT OPTIONS
+  // ============================================================
+
+  const menuItemsSelectData = menuItems.map((item) => ({
+    value: item.id,
+    label: item.name,
+  }));
+
+  // ============================================================
+  // LOAD DEAL INTO FORM
+  // ============================================================
+
   useEffect(() => {
     if (!deal) {
       return;
     }
 
-    const normalizedItems = Array.isArray(deal.items)
-      ? deal.items
-      : Array.isArray(deal.dealItems)
-        ? deal.dealItems
-            .map((item) => item.menuItemId ?? item.menuItemName ?? "")
-            .filter(Boolean)
-        : [];
+    /*
+     * Existing backend response may contain:
+     *
+     * deal.dealItems = [
+     *   {
+     *     menuItemId: "...",
+     *     quantity: 2,
+     *     displayOrder: 1
+     *   }
+     * ]
+     *
+     * We preserve those quantities.
+     *
+     * For older data where quantity isn't available,
+     * default to 1.
+     */
+
+    let normalizedItems: DealItemSelection[] = [];
+
+    if (Array.isArray(deal.dealItems)) {
+      normalizedItems = deal.dealItems
+        .map((item: any) => {
+          const menuItemId = item.menuItemId ?? item.MenuItemId ?? "";
+
+          if (!menuItemId) {
+            return null;
+          }
+
+          const quantity = Number(item.quantity ?? item.Quantity ?? 1);
+
+          return {
+            menuItemId,
+            quantity: Number.isInteger(quantity) && quantity > 0 ? quantity : 1,
+          };
+        })
+        .filter(Boolean) as DealItemSelection[];
+
+      /*
+       * Preserve backend DisplayOrder when available.
+       */
+      normalizedItems.sort((a, b) => {
+        const aOriginal = deal.dealItems?.find(
+          (item: any) => (item.menuItemId ?? item.MenuItemId) === a.menuItemId,
+        );
+
+        const bOriginal = deal.dealItems?.find(
+          (item: any) => (item.menuItemId ?? item.MenuItemId) === b.menuItemId,
+        );
+
+        return (
+          Number(aOriginal?.displayOrder ?? aOriginal?.displayOrder ?? 0) -
+          Number(bOriginal?.displayOrder ?? bOriginal?.displayOrder ?? 0)
+        );
+      });
+    }
+
+    /*
+     * Fallback for older Deal shape:
+     *
+     * deal.items = ["id1", "id2"]
+     */
+    if (normalizedItems.length === 0 && Array.isArray(deal.items)) {
+      normalizedItems = deal.items
+        .map((item: any) => {
+          const menuItemId =
+            typeof item === "string"
+              ? item
+              : (item?.menuItemId ?? item?.MenuItemId ?? "");
+
+          if (!menuItemId) {
+            return null;
+          }
+
+          return {
+            menuItemId,
+            quantity: Number(item?.quantity ?? item?.Quantity ?? 1) || 1,
+          };
+        })
+        .filter(Boolean) as DealItemSelection[];
+    }
 
     setForm({
       title: deal.title,
@@ -91,12 +348,18 @@ export default function EditDeal() {
       price: String(deal.price),
       originalPrice: String(deal.originalPrice ?? deal.price),
       badge: deal.badge ?? "",
-      items: normalizedItems.length > 0 ? normalizedItems : [""],
+      items: normalizedItems,
       featured: Boolean(deal.featured),
     });
 
     setImagePreview(deal.image ?? "");
+
+    setErrors({});
   }, [deal]);
+
+  // ============================================================
+  // IMAGE PREVIEW
+  // ============================================================
 
   useEffect(() => {
     if (!form?.imageFile) {
@@ -112,6 +375,10 @@ export default function EditDeal() {
     };
   }, [form?.imageFile]);
 
+  // ============================================================
+  // LOADING
+  // ============================================================
+
   if (dealsLoading && !deal) {
     return (
       <div className="flex min-h-[400px] items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-center text-sm text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
@@ -120,9 +387,17 @@ export default function EditDeal() {
     );
   }
 
+  // ============================================================
+  // NOT FOUND
+  // ============================================================
+
   if (!deal || !form) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-center dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-800">
+          <Utensils size={22} />
+        </div>
+
         <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">
           Deal not found
         </h2>
@@ -133,7 +408,7 @@ export default function EditDeal() {
 
         <Link
           to="/deals"
-          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600"
+          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-600"
         >
           <ArrowLeft size={16} />
           Back to Deals
@@ -141,6 +416,10 @@ export default function EditDeal() {
       </div>
     );
   }
+
+  // ============================================================
+  // IMAGE CHANGE
+  // ============================================================
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -150,6 +429,21 @@ export default function EditDeal() {
     }
 
     if (!file.type.startsWith("image/")) {
+      setErrors((previous) => ({
+        ...previous,
+        image: "Please select a valid image file.",
+      }));
+
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((previous) => ({
+        ...previous,
+        image: "Image size must be less than 5 MB.",
+      }));
+
       event.target.value = "";
       return;
     }
@@ -162,7 +456,16 @@ export default function EditDeal() {
           }
         : previous,
     );
+
+    setErrors((previous) => ({
+      ...previous,
+      image: undefined,
+    }));
   };
+
+  // ============================================================
+  // REMOVE IMAGE
+  // ============================================================
 
   const removeImage = () => {
     setForm((previous) =>
@@ -176,39 +479,169 @@ export default function EditDeal() {
     );
 
     setImagePreview("");
+
+    setErrors((previous) => ({
+      ...previous,
+      image: "Deal image is required.",
+    }));
   };
+
+  // ============================================================
+  // ITEM SELECTION
+  // ============================================================
 
   const handleItemSelection = (selectedValues: string[]) => {
-    setForm((previous) =>
-      previous
-        ? {
-            ...previous,
-            items: selectedValues,
+    setForm((previous) => {
+      if (!previous) {
+        return previous;
+      }
+
+      /*
+       * IMPORTANT:
+       *
+       * When react-select changes, keep the existing quantity
+       * for items that were already selected.
+       *
+       * Newly selected items start at quantity 1.
+       */
+
+      const newItems: DealItemSelection[] = selectedValues.map((menuItemId) => {
+        const existingItem = previous.items.find(
+          (item) => item.menuItemId === menuItemId,
+        );
+
+        return (
+          existingItem || {
+            menuItemId,
+            quantity: 1,
           }
-        : previous,
-    );
+        );
+      });
+
+      return {
+        ...previous,
+        items: newItems,
+      };
+    });
+
+    setErrors((previous) => ({
+      ...previous,
+      items: undefined,
+    }));
   };
 
-  const menuItemsSelectData = menuItems.map((x) => {
-    return { value: x.id, label: x.name };
-  });
+  // ============================================================
+  // INCREASE QUANTITY
+  // ============================================================
+
+  const increaseQuantity = (menuItemId: string) => {
+    setForm((previous) => {
+      if (!previous) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        items: previous.items.map((item) =>
+          item.menuItemId === menuItemId
+            ? {
+                ...item,
+                quantity: item.quantity + 1,
+              }
+            : item,
+        ),
+      };
+    });
+  };
+
+  // ============================================================
+  // DECREASE QUANTITY
+  // ============================================================
+
+  const decreaseQuantity = (menuItemId: string) => {
+    setForm((previous) => {
+      if (!previous) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        items: previous.items.map((item) =>
+          item.menuItemId === menuItemId
+            ? {
+                ...item,
+                quantity: Math.max(1, item.quantity - 1),
+              }
+            : item,
+        ),
+      };
+    });
+  };
+
+  // ============================================================
+  // REMOVE INCLUDED ITEM
+  // ============================================================
+
+  const removeIncludedItem = (menuItemId: string) => {
+    setForm((previous) => {
+      if (!previous) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        items: previous.items.filter((item) => item.menuItemId !== menuItemId),
+      };
+    });
+  };
+
+  // ============================================================
+  // SELECTED ITEMS
+  // ============================================================
 
   const selectedMenuItems = form.items
-    .map((itemId) => menuItems.find((menuItem) => menuItem.id === itemId))
-    .filter(Boolean) as typeof menuItems;
+    .map((selection) => {
+      const menuItem = menuItems.find(
+        (item) => item.id === selection.menuItemId,
+      );
 
-  const selectedMenuItemsData = selectedMenuItems.map((x) => {
-    return { value: x.id, label: x.name };
-  });
+      if (!menuItem) {
+        return null;
+      }
+
+      return {
+        ...menuItem,
+        quantity: selection.quantity,
+      };
+    })
+    .filter(Boolean) as Array<
+    (typeof menuItems)[number] & {
+      quantity: number;
+    }
+  >;
+
+  // ============================================================
+  // TOTAL ITEMS
+  // ============================================================
+
+  const totalIncludedItems = form.items.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  );
+
+  // ============================================================
+  // VALIDATION
+  // ============================================================
 
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
 
-    if (!form) return newErrors;
-
     const title = form.title.trim();
+
     const description = form.description.trim();
+
     const price = Number(form.price);
+
     const originalPrice = Number(form.originalPrice);
 
     // --------------------------------------------------------
@@ -275,17 +708,39 @@ export default function EditDeal() {
     // INCLUDED ITEMS
     // --------------------------------------------------------
 
-    const validItems = form.items.map((item) => item.trim()).filter(Boolean);
-
-    if (!validItems.length) {
+    if (!form.items.length) {
       newErrors.items = "At least one menu item must be selected.";
+    } else if (
+      form.items.some(
+        (item) =>
+          !item.menuItemId ||
+          !Number.isInteger(item.quantity) ||
+          item.quantity < 1,
+      )
+    ) {
+      newErrors.items =
+        "Each included item must have a quantity of at least 1.";
     }
 
     return newErrors;
   };
 
+  // ============================================================
+  // BUILD DEAL ITEMS PAYLOAD
+  // ============================================================
+
+  const buildDealItemsPayload = () =>
+    form.items.map((item, index) => ({
+      MenuItemId: item.menuItemId,
+      Quantity: item.quantity,
+      DisplayOrder: index + 1,
+    }));
+
+  // ============================================================
+  // TOAST
+  // ============================================================
+
   const showToast = (message: string, type: "success" | "error") => {
-    // Clear previous timeout
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
     }
@@ -309,6 +764,7 @@ export default function EditDeal() {
   const hideToast = () => {
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
+
       toastTimeoutRef.current = null;
     }
 
@@ -318,15 +774,9 @@ export default function EditDeal() {
     }));
   };
 
-  const buildDealItemsPayload = () =>
-    form?.items
-      .map((menuItemId) => menuItemId.trim())
-      .filter(Boolean)
-      .map((menuItemId, index) => ({
-        MenuItemId: menuItemId,
-        Quantity: 1,
-        DisplayOrder: index + 1,
-      })) || [];
+  // ============================================================
+  // SUBMIT
+  // ============================================================
 
   const handleSubmit = async () => {
     if (isSaving || !form || !deal) {
@@ -334,6 +784,7 @@ export default function EditDeal() {
     }
 
     const validationErrors = validateForm();
+
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -341,9 +792,9 @@ export default function EditDeal() {
     }
 
     try {
-      // ====================================================
-      // CREATE FORMDATA
-      // ====================================================
+      // ========================================================
+      // FORMDATA
+      // ========================================================
 
       const formData = new FormData();
 
@@ -367,17 +818,17 @@ export default function EditDeal() {
 
       formData.append("DisplayOrder", "1");
 
-      // ====================================================
+      // ========================================================
       // DEAL ITEMS
-      // ====================================================
+      // ========================================================
 
       const dealItems = buildDealItemsPayload();
 
       formData.append("DealItems", JSON.stringify(dealItems));
 
-      // ====================================================
+      // ========================================================
       // IMAGE
-      // ====================================================
+      // ========================================================
 
       if (form.imageFile) {
         formData.append("Image", form.imageFile);
@@ -385,24 +836,21 @@ export default function EditDeal() {
 
       formData.append("RemoveImage", "false");
 
-      // ====================================================
-      // API CALL
-      // ====================================================
+      // ========================================================
+      // API
+      // ========================================================
 
       const response = await addOrUpdateDeal(formData).unwrap();
 
-      // ====================================================
+      // ========================================================
       // SUCCESS
-      // ====================================================
+      // ========================================================
+
       if (response.success) {
         setShowSuccessModal(true);
       }
     } catch (error: any) {
       console.error("Error updating deal:", error);
-      showToast(error.data.message, "error");
-      // ====================================================
-      // API ERROR
-      // ====================================================
 
       let message = "Something went wrong while updating the deal.";
 
@@ -414,6 +862,8 @@ export default function EditDeal() {
         message = error.error;
       }
 
+      showToast(message, "error");
+
       setErrors((previous) => ({
         ...previous,
         title: message,
@@ -421,551 +871,670 @@ export default function EditDeal() {
     }
   };
 
+  // ============================================================
+  // INPUT CLASS
+  // ============================================================
+
+  const inputClass = (hasError = false) =>
+    `h-11 w-full rounded-lg border bg-transparent px-4 text-sm text-gray-800 outline-none placeholder:text-gray-400 focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500 ${
+      hasError
+        ? "border-error-500 focus:border-error-500 focus:ring-error-500/10 dark:border-error-500"
+        : "border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700"
+    }`;
+
+  // ============================================================
+  // TEXTAREA CLASS
+  // ============================================================
+
+  const textareaClass = (hasError = false) =>
+    `w-full resize-none rounded-lg border px-4 py-3 text-sm text-gray-800 outline-none placeholder:text-gray-400 focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500 ${
+      hasError
+        ? "border-error-500 focus:border-error-500 focus:ring-error-500/10 dark:border-error-500"
+        : "border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700"
+    }`;
+
+  // ============================================================
+  // RENDER
+  // ============================================================
+
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <>
+      {/* =====================================================
+          TOAST
+      ===================================================== */}
+
       <Toast
         show={toast.show}
         message={toast.message}
         type={toast.type}
         onClose={hideToast}
       />
-      {/* HEADER */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <Link
-          to={`/deals/${deal.id}`}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-        >
-          <ArrowLeft size={18} />
-        </Link>
 
+      <div className="mx-auto w-full">
+        {/* =====================================================
+            HEADER
+        ===================================================== */}
+
+        {/* <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <Link
+            to={`/deals/${deal.id}`}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            <ArrowLeft size={18} />
+          </Link>
+
+          <div>
+            <h1 className="text-title-md font-semibold text-gray-800 dark:text-white/90">
+              Edit Deal
+            </h1>
+
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Update the information for{" "}
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                {deal.title}
+              </span>
+              .
+            </p>
+          </div>
+        </div> */}
         <div>
-          <h1 className="text-title-md font-semibold text-gray-800 dark:text-white/90">
-            Edit Deal
-          </h1>
+          <div className="mb-2 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <span>Home</span>
 
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Update the information for{" "}
-            <span className="font-medium text-gray-700 dark:text-gray-300">
-              {deal.title}
-            </span>
-            .
-          </p>
+            <ChevronRight size={15} />
+
+            <span>Deals</span>
+
+            <ChevronRight size={15} />
+
+            <span className="text-gray-800 dark:text-white/90">Edit Deal</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
+                Edit Deal
+              </h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Update the information for
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  {" " + deal.title}
+                </span>
+                .
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* FORM */}
-      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="border-b border-gray-200 px-5 py-5 lg:px-6 dark:border-gray-800">
-          <h2 className="text-base font-semibold text-gray-800 dark:text-white/90">
-            Deal Information
-          </h2>
-        </div>
+        {/* =====================================================
+            FORM
+        ===================================================== */}
 
-        <div className="grid grid-cols-1 gap-6 p-5 lg:grid-cols-2 lg:p-6">
-          {/* TITLE */}
-          <div className="lg:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Deal Title <span className="text-error-500">*</span>
-            </label>
+        <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+          {/* FORM HEADER */}
 
-            <input
-              type="text"
-              value={form.title}
-              onChange={(event) => {
-                setForm((previous: any) => ({
-                  ...previous,
-                  title: event.target.value,
-                }));
-                setErrors((previous) => ({
-                  ...previous,
-                  title: undefined,
-                }));
-              }}
-              className={`h-11 w-full rounded-lg border bg-transparent px-4 text-sm text-gray-800 outline-none placeholder:text-gray-400 focus:ring-3 dark:bg-gray-900 dark:text-white/90 ${
-                errors.title
-                  ? "border-error-500 focus:border-error-500 focus:ring-error-500/10 dark:border-error-500"
-                  : "border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700"
-              }`}
-            />
+          <div className="border-b border-gray-200 px-5 py-5 lg:px-6 dark:border-gray-800">
+            <h2 className="text-base font-semibold text-gray-800 dark:text-white/90">
+              Deal Information
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Update the details customers will see for this deal.
+            </p>
+          </div>
+
+          {/* FORM BODY */}
+
+          <div className="grid grid-cols-1 gap-6 p-5 lg:grid-cols-2 lg:p-6">
+            {/* =================================================
+                API ERROR
+            ================================================= */}
+
             {errors.title && (
-              <p className="mt-1.5 text-xs text-error-500">{errors.title}</p>
+              <div className="flex items-start gap-3 rounded-xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-600 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400 lg:col-span-2">
+                <X size={18} className="mt-0.5 shrink-0" />
+
+                <p>{errors.title}</p>
+              </div>
             )}
-          </div>
 
-          {/* DESCRIPTION */}
-          <div className="lg:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Description <span className="text-error-500">*</span>
-            </label>
+            {/* =================================================
+                TITLE
+            ================================================= */}
 
-            <textarea
-              rows={5}
-              value={form.description}
-              onChange={(event) => {
-                setForm((previous: any) => ({
-                  ...previous,
-                  description: event.target.value,
-                }));
-                setErrors((previous) => ({
-                  ...previous,
-                  description: undefined,
-                }));
-              }}
-              className={`w-full resize-none rounded-lg border bg-transparent px-4 py-3 text-sm text-gray-800 outline-none placeholder:text-gray-400 focus:ring-3 dark:bg-gray-900 dark:text-white/90 ${
-                errors.description
-                  ? "border-error-500 focus:border-error-500 focus:ring-error-500/10 dark:border-error-500"
-                  : "border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700"
-              }`}
-            />
-            {errors.description && (
-              <p className="mt-1.5 text-xs text-error-500">
-                {errors.description}
-              </p>
-            )}
-          </div>
-
-          {/* PRICE */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Deal Price <span className="text-error-500">*</span>
-            </label>
-
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                Rs.
-              </span>
+            <div className="lg:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Deal Title <span className="text-error-500">*</span>
+              </label>
 
               <input
-                type="number"
-                min="0"
-                value={form.price}
+                type="text"
+                value={form.title}
+                maxLength={100}
                 onChange={(event) => {
                   setForm((previous: any) => ({
                     ...previous,
-                    price: event.target.value,
+                    title: event.target.value,
                   }));
+
                   setErrors((previous) => ({
                     ...previous,
-                    price: undefined,
+                    title: undefined,
                   }));
                 }}
-                className={`h-11 w-full rounded-lg border bg-transparent pl-12 pr-4 text-sm text-gray-800 outline-none focus:ring-3 dark:bg-gray-900 dark:text-white/90 ${
-                  errors.price
-                    ? "border-error-500 focus:border-error-500 focus:ring-error-500/10 dark:border-error-500"
-                    : "border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700"
-                }`}
+                className={inputClass(!!errors.title)}
               />
             </div>
-            {errors.price && (
-              <p className="mt-1.5 text-xs text-error-500">{errors.price}</p>
-            )}
-          </div>
 
-          {/* ORIGINAL PRICE */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Original Price <span className="text-error-500">*</span>
-            </label>
+            {/* =================================================
+                DESCRIPTION
+            ================================================= */}
 
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                Rs.
-              </span>
+            <div className="lg:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Description <span className="text-error-500">*</span>
+              </label>
 
-              <input
-                type="number"
-                min="0"
-                value={form.originalPrice}
+              <textarea
+                rows={5}
+                maxLength={500}
+                value={form.description}
                 onChange={(event) => {
                   setForm((previous: any) => ({
                     ...previous,
-                    originalPrice: event.target.value,
+                    description: event.target.value,
                   }));
+
                   setErrors((previous) => ({
                     ...previous,
-                    originalPrice: undefined,
+                    description: undefined,
                   }));
                 }}
-                className={`h-11 w-full rounded-lg border bg-transparent pl-12 pr-4 text-sm text-gray-800 outline-none focus:ring-3 dark:bg-gray-900 dark:text-white/90 ${
-                  errors.originalPrice
-                    ? "border-error-500 focus:border-error-500 focus:ring-error-500/10 dark:border-error-500"
-                    : "border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700"
-                }`}
+                className={textareaClass(!!errors.description)}
               />
-            </div>
-            {errors.originalPrice && (
-              <p className="mt-1.5 text-xs text-error-500">
-                {errors.originalPrice}
-              </p>
-            )}
-          </div>
 
-          {/* BADGE */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Badge
-            </label>
-
-            <input
-              type="text"
-              value={form.badge}
-              onChange={(event) =>
-                setForm((previous: any) => ({
-                  ...previous,
-                  badge: event.target.value,
-                }))
-              }
-              placeholder="e.g. Popular"
-              className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 outline-none placeholder:text-gray-400 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-            />
-          </div>
-
-          {/* FEATURED */}
-          <div className="flex items-end">
-            <label className="flex h-11 w-full cursor-pointer items-center justify-between rounded-lg border border-gray-300 px-4 dark:border-gray-700">
-              <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Featured Deal
-                </p>
-
-                <p className="text-xs text-gray-400">
-                  Show this deal as featured.
-                </p>
+              <div className="mt-1.5 flex justify-end">
+                <span className="text-xs text-gray-400">
+                  {form.description.length}/500
+                </span>
               </div>
 
+              {errors.description && (
+                <p className="mt-1.5 text-xs text-error-500">
+                  {errors.description}
+                </p>
+              )}
+            </div>
+
+            {/* =================================================
+                PRICE
+            ================================================= */}
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Deal Price <span className="text-error-500">*</span>
+              </label>
+
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                  Rs.
+                </span>
+
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={form.price}
+                  onChange={(event) => {
+                    setForm((previous: any) => ({
+                      ...previous,
+                      price: event.target.value,
+                    }));
+
+                    setErrors((previous) => ({
+                      ...previous,
+                      price: undefined,
+                      originalPrice: undefined,
+                    }));
+                  }}
+                  className={`${inputClass(!!errors.price)} pl-12`}
+                />
+              </div>
+
+              {errors.price && (
+                <p className="mt-1.5 text-xs text-error-500">{errors.price}</p>
+              )}
+            </div>
+
+            {/* =================================================
+                ORIGINAL PRICE
+            ================================================= */}
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Original Price <span className="text-error-500">*</span>
+              </label>
+
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                  Rs.
+                </span>
+
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={form.originalPrice}
+                  onChange={(event) => {
+                    setForm((previous: any) => ({
+                      ...previous,
+                      originalPrice: event.target.value,
+                    }));
+
+                    setErrors((previous) => ({
+                      ...previous,
+                      originalPrice: undefined,
+                    }));
+                  }}
+                  className={`${inputClass(!!errors.originalPrice)} pl-12`}
+                />
+              </div>
+
+              {errors.originalPrice && (
+                <p className="mt-1.5 text-xs text-error-500">
+                  {errors.originalPrice}
+                </p>
+              )}
+            </div>
+
+            {/* =================================================
+                BADGE
+            ================================================= */}
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Badge
+              </label>
+
               <input
-                type="checkbox"
-                checked={form.featured}
+                type="text"
+                maxLength={40}
+                value={form.badge}
                 onChange={(event) =>
                   setForm((previous: any) => ({
                     ...previous,
-                    featured: event.target.checked,
+                    badge: event.target.value,
                   }))
                 }
-                className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                placeholder="e.g. Popular"
+                className={inputClass()}
               />
-            </label>
-          </div>
-
-          {/* IMAGE */}
-          <div className="lg:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Deal Image
-            </label>
-
-            {imagePreview ? (
-              <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-                <div className="relative">
-                  <img
-                    src={baseUrl + imagePreview}
-                    alt={form.title}
-                    className="h-64 w-full object-cover sm:h-72"
-                  />
-
-                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/80 via-black/30 to-transparent px-4 pb-3 pt-14">
-                    <span className="min-w-0 truncate text-xs font-medium text-white">
-                      {form.imageFile ? form.imageFile.name : "Current image"}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-white/95 px-3 py-2 text-xs font-medium text-error-600 hover:bg-white"
-                    >
-                      <Trash2 size={14} />
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <label
-                htmlFor="edit-deal-image"
-                className="flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 px-5 py-10 text-center hover:border-brand-400 hover:bg-gray-50 dark:border-gray-700 dark:hover:border-brand-500 dark:hover:bg-white/[0.02]"
-              >
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                  <Upload size={22} />
-                </div>
-
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Click to upload an image
-                </p>
-
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  PNG, JPG, JPEG or WEBP
-                </p>
-
-                <input
-                  id="edit-deal-image"
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg,image/webp"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </label>
-            )}
-
-            {imagePreview && (
-              <label
-                htmlFor="edit-deal-image-change"
-                className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-brand-500 hover:text-brand-600"
-              >
-                <Upload size={16} />
-                Change image
-                <input
-                  id="edit-deal-image-change"
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg,image/webp"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
-
-          {/* ITEMS */}
-          <div className="lg:col-span-2">
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Included Items
-              </label>
-
-              <p className="mt-1 text-xs text-gray-400">
-                Select all menu items included in this deal.
-              </p>
             </div>
 
-            <div
-              className={`rounded-xl border bg-transparent shadow-sm transition ${
-                errors.items
-                  ? "border-error-500 focus-within:border-error-500 focus-within:ring-3 focus-within:ring-error-500/10 dark:border-error-500"
-                  : "border-gray-300 focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/10 dark:border-gray-700"
-              }`}
-            >
-              <div className="flex min-h-[56px] flex-wrap items-center gap-2 border-b border-gray-200 bg-gray-50/70 px-3 py-2 dark:border-gray-700 dark:bg-gray-900/60">
-                {selectedMenuItems.length > 0 ? (
-                  selectedMenuItems.map((menuItem) => (
-                    <span
-                      key={menuItem.id}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/15"
-                    >
-                      {menuItem.name}
+            {/* =================================================
+                FEATURED
+            ================================================= */}
+
+            <div className="flex items-end">
+              <label className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-4 rounded-lg border border-gray-300 px-4 py-2 dark:border-gray-700">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Featured Deal
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    Show this deal as featured.
+                  </p>
+                </div>
+
+                <input
+                  type="checkbox"
+                  checked={form.featured}
+                  onChange={(event) =>
+                    setForm((previous: any) => ({
+                      ...previous,
+                      featured: event.target.checked,
+                    }))
+                  }
+                  className="h-4 w-4 shrink-0 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                />
+              </label>
+            </div>
+
+            {/* =================================================
+                IMAGE
+            ================================================= */}
+
+            <div className="lg:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Deal Image <span className="text-error-500">*</span>
+              </label>
+
+              {imagePreview ? (
+                <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+                  <div className="relative">
+                    <img
+                      src={
+                        form.imageFile ? imagePreview : baseUrl + imagePreview
+                      }
+                      alt={form.title}
+                      className="h-56 w-full object-cover sm:h-72"
+                    />
+
+                    <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-3 bg-gradient-to-t from-black/80 via-black/30 to-transparent px-4 pb-3 pt-14 sm:flex-row sm:items-end sm:justify-between">
+                      <span className="max-w-full truncate text-xs font-medium text-white">
+                        {form.imageFile ? form.imageFile.name : "Current image"}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-white/95 px-3 py-2 text-xs font-medium text-error-600 transition hover:bg-white"
+                      >
+                        <Trash2 size={14} />
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <label
+                  htmlFor="edit-deal-image"
+                  className={`flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-5 py-10 text-center transition ${
+                    errors.image
+                      ? "border-error-400 bg-error-50/30 dark:border-error-500/60 dark:bg-error-500/5"
+                      : "border-gray-300 hover:border-brand-400 hover:bg-gray-50 dark:border-gray-700 dark:hover:border-brand-500 dark:hover:bg-white/[0.02]"
+                  }`}
+                >
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                    <Upload size={22} />
+                  </div>
+
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Click to upload an image
+                  </p>
+
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    PNG, JPG, JPEG or WEBP
+                  </p>
+
+                  <p className="mt-1 text-xs text-gray-400">
+                    Maximum file size: 5 MB
+                  </p>
+
+                  <input
+                    id="edit-deal-image"
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
+
+              {errors.image && (
+                <p className="mt-1.5 text-xs text-error-500">{errors.image}</p>
+              )}
+
+              {imagePreview && (
+                <label
+                  htmlFor="edit-deal-image-change"
+                  className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-brand-500 transition hover:text-brand-600"
+                >
+                  <Upload size={16} />
+                  Change image
+                  <input
+                    id="edit-deal-image-change"
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* =================================================
+                INCLUDED ITEMS
+            ================================================= */}
+
+            <div className="lg:col-span-2">
+              {/* HEADER */}
+
+              <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Included Items <span className="text-error-500">*</span>
+                  </label>
+
+                  <p className="mt-1 text-xs text-gray-400">
+                    Select the menu items included in this deal and adjust the
+                    quantity of each item.
+                  </p>
+                </div>
+
+                {/* TOTAL */}
+
+                {form.items.length > 0 && (
+                  <div className="inline-flex w-fit items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300">
+                    <Utensils size={14} />
+                    {form.items.length}{" "}
+                    {form.items.length === 1 ? "item" : "items"}
+                    <span className="text-brand-300 dark:text-brand-500">
+                      •
                     </span>
-                  ))
-                ) : (
-                  <span className="text-sm text-gray-400 dark:text-gray-500">
-                    Select menu items...
-                  </span>
+                    {totalIncludedItems} total
+                  </div>
                 )}
               </div>
 
-              <Select
-                options={menuItemsSelectData}
-                defaultValue={selectedMenuItemsData}
-                isMulti
-                className="basic-multi-select w-full border-0 bg-transparent p-2 text-sm text-gray-800 outline-none dark:bg-gray-900 dark:text-white/90"
-                classNamePrefix="select"
-                placeholder="Select 1 or more food items"
-                isDisabled={menuItemsLoading || menuItems.length === 0}
-                onChange={(data) => {
-                  const selectedValues = Array.from(
-                    data,
-                    (option) => option.value,
-                  );
+              {/* SELECT */}
 
-                  handleItemSelection(selectedValues);
-                }}
-              />
+              <div
+                className={`rounded-xl border bg-transparent shadow-sm transition ${
+                  errors.items
+                    ? "border-error-500 focus-within:border-error-500 focus-within:ring-3 focus-within:ring-error-500/10 dark:border-error-500"
+                    : "border-gray-300 focus-within:border-brand-300 focus-within:ring-brand-500/10 dark:border-gray-700"
+                }`}
+              >
+                <Select
+                  options={menuItemsSelectData}
+                  isMulti
+                  value={menuItemsSelectData.filter((option) =>
+                    form.items.some((item) => item.menuItemId === option.value),
+                  )}
+                  isLoading={menuItemsLoading}
+                  isDisabled={menuItemsLoading || menuItems.length === 0}
+                  onChange={(data) => {
+                    const selectedValues = data.map((option) => option.value);
+
+                    handleItemSelection(selectedValues);
+                  }}
+                  placeholder="Select 1 or more food items"
+                  className="basic-multi-select w-full border-0 bg-transparent text-sm text-gray-800 outline-none dark:bg-gray-900 dark:text-white/90"
+                  classNamePrefix="select"
+                />
+              </div>
+
+              {errors.items && (
+                <p className="mt-1.5 text-xs text-error-500">{errors.items}</p>
+              )}
+
+              {/* =================================================
+                  SELECTED ITEMS
+              ================================================= */}
+
+              {selectedMenuItems.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {selectedMenuItems.map((menuItem, index) => (
+                    <div
+                      key={menuItem.id}
+                      className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md sm:p-4 dark:border-gray-700 dark:bg-gray-900/70 dark:hover:border-brand-500/30"
+                    >
+                      {/* DECORATIVE */}
+
+                      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-brand-500/5 blur-2xl" />
+
+                      <div className="relative flex items-center gap-3 sm:gap-4">
+                        {/* NUMBER */}
+
+                        <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-xs font-semibold text-gray-500 sm:flex dark:bg-gray-800 dark:text-gray-400">
+                          {String(index + 1).padStart(2, "0")}
+                        </div>
+
+                        {/* IMAGE */}
+
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
+                          {menuItem.image ? (
+                            <img
+                              src={
+                                menuItem.image.startsWith("http")
+                                  ? menuItem.image
+                                  : baseUrl + menuItem.image
+                              }
+                              alt={menuItem.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Utensils size={21} className="text-gray-400" />
+                          )}
+                        </div>
+
+                        {/* INFO */}
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="truncate text-sm font-semibold text-gray-800 dark:text-white">
+                              {menuItem.name}
+                            </h3>
+
+                            <span className="hidden shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-600 sm:inline-flex dark:bg-brand-500/10 dark:text-brand-300">
+                              × {menuItem.quantity}
+                            </span>
+                          </div>
+
+                          <p className="mt-1 text-xs text-gray-400">
+                            Included in deal
+                          </p>
+                        </div>
+
+                        {/* QUANTITY */}
+
+                        <div className="flex shrink-0 items-center rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
+                          <button
+                            type="button"
+                            onClick={() => decreaseQuantity(menuItem.id)}
+                            disabled={menuItem.quantity <= 1}
+                            aria-label={`Decrease ${menuItem.name} quantity`}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-white hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                          >
+                            <Minus size={15} />
+                          </button>
+
+                          <div className="flex min-w-[34px] items-center justify-center">
+                            <span className="text-sm font-bold text-gray-800 dark:text-white">
+                              {menuItem.quantity}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => increaseQuantity(menuItem.id)}
+                            aria-label={`Increase ${menuItem.name} quantity`}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white shadow-sm transition hover:bg-brand-600 active:scale-95"
+                          >
+                            <Plus size={15} />
+                          </button>
+                        </div>
+
+                        {/* REMOVE */}
+
+                        <button
+                          type="button"
+                          onClick={() => removeIncludedItem(menuItem.id)}
+                          aria-label={`Remove ${menuItem.name}`}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-error-50 hover:text-error-500 dark:hover:bg-error-500/10"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* EMPTY */}
+
+              {selectedMenuItems.length === 0 && !menuItemsLoading && (
+                <div className="mt-4 flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 px-5 py-10 text-center dark:border-gray-700 dark:bg-gray-900/40">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm dark:bg-gray-800">
+                    <Utensils size={21} />
+                  </div>
+
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    No items selected
+                  </p>
+
+                  <p className="mt-1 max-w-sm text-xs leading-5 text-gray-400">
+                    Select menu items above to add them to this deal.
+                  </p>
+                </div>
+              )}
             </div>
-
-            {errors.items && (
-              <p className="mt-1.5 text-xs text-error-500">{errors.items}</p>
-            )}
           </div>
-        </div>
 
-        {/* FOOTER */}
-        <div className="flex flex-col-reverse gap-3 border-t border-gray-200 px-5 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-gray-800">
-          <Link
-            to={`/deals/${deal.id}`}
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-300 px-5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-          >
-            Cancel
-          </Link>
+          {/* =====================================================
+              FOOTER
+          ===================================================== */}
 
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSaving}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSaving ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Check size={16} />
-                Save Changes
-              </>
-            )}
-          </button>
+          <div className="flex flex-col-reverse gap-3 border-t border-gray-200 px-5 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-gray-800">
+            <Link
+              to={`/deals/${deal.id}`}
+              className="inline-flex h-11 items-center justify-center rounded-lg border border-gray-300 px-5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              Cancel
+            </Link>
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSaving}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 text-sm font-medium text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSaving ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check size={16} />
+                  Save Changes
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* SUCCESS MODAL */}
+      {/* =============================================================
+          SUCCESS MODAL
+      ============================================================= */}
+
       {showSuccessModal && (
         <SuccessModal
-          dealName={form?.title || ""}
+          dealName={form.title}
           onViewDeals={() => navigate("/deals")}
           onClose={() => navigate("/deals")}
         />
       )}
-    </div>
-  );
-}
-
-function SuccessModal({
-  dealName,
-  onViewDeals,
-  onClose,
-}: {
-  dealName: string;
-  onViewDeals: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto p-3 sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="success-modal-title"
-    >
-      {/* BACKDROP */}
-      <div
-        className="fixed inset-0 bg-gray-950/40 backdrop-blur-md dark:bg-black/60"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* MODAL */}
-      <div className="relative my-auto flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/70 bg-white shadow-2xl dark:border-gray-700/80 dark:bg-gray-900 sm:rounded-3xl">
-        {/* Decorative background */}
-        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-success-500/10 blur-3xl sm:-right-20 sm:-top-20 sm:h-48 sm:w-48" />
-
-        <div className="pointer-events-none absolute -bottom-20 -left-12 h-40 w-40 rounded-full bg-brand-500/10 blur-3xl sm:-bottom-24 sm:-left-16 sm:h-48 sm:w-48" />
-
-        {/* CLOSE BUTTON */}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute right-2.5 top-2.5 z-20 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 sm:right-4 sm:top-4 sm:h-9 sm:w-9 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-        >
-          <X size={17} className="sm:h-[18px] sm:w-[18px]" />
-        </button>
-
-        {/* SCROLLABLE CONTENT */}
-        <div className="relative min-h-0 overflow-y-auto overscroll-contain">
-          <div className="px-4 pb-5 pt-7 sm:px-7 sm:pb-7 sm:pt-9 md:px-8 md:pb-8">
-            {/* SUCCESS ICON */}
-            <div className="flex justify-center">
-              <div className="relative">
-                {/* Glow */}
-                <div className="absolute inset-0 scale-125 rounded-full bg-success-500/20 blur-xl" />
-
-                {/* Outer circle */}
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-success-50 ring-6 ring-success-50/60 sm:h-20 sm:w-20 sm:ring-8 dark:bg-success-500/10 dark:ring-success-500/5">
-                  {/* Inner circle */}
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success-500 text-white shadow-lg shadow-success-500/30 sm:h-14 sm:w-14">
-                    <Check
-                      size={24}
-                      strokeWidth={3}
-                      className="sm:h-[30px] sm:w-[30px]"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* TEXT */}
-            <div className="mt-5 text-center sm:mt-7">
-              {/* Badge */}
-              <div className="mb-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-1 text-[11px] font-medium text-success-600 sm:px-3 sm:text-xs dark:bg-success-500/10 dark:text-success-400">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success-500" />
-                Successfully Updated
-              </div>
-
-              {/* Title */}
-              <h2
-                id="success-modal-title"
-                className="px-2 text-xl font-semibold tracking-tight text-gray-800 sm:text-2xl dark:text-white"
-              >
-                Deal Updated Successfully!
-              </h2>
-
-              {/* Description */}
-              <p className="mx-auto mt-2 max-w-sm px-1 text-xs leading-5 text-gray-500 sm:text-sm sm:leading-6 dark:text-gray-400">
-                Your deal{" "}
-                <span className="font-semibold text-gray-700 dark:text-gray-200">
-                  "{dealName}"
-                </span>{" "}
-                has been updated successfully.
-              </p>
-            </div>
-
-            {/* DEAL PREVIEW */}
-            <div className="mt-5 flex min-w-0 items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/80 p-2.5 sm:mt-6 sm:gap-3 sm:p-3 dark:border-gray-800 dark:bg-gray-800/50">
-              {/* Icon */}
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-success-500 shadow-sm sm:h-10 sm:w-10 dark:bg-gray-800">
-                <Utensils size={17} className="sm:h-[18px] sm:w-[18px]" />
-              </div>
-
-              {/* Text */}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-gray-800 sm:text-sm dark:text-white/90">
-                  {dealName}
-                </p>
-
-                <p className="mt-0.5 truncate text-[10px] text-gray-400 sm:text-xs">
-                  Available in your deals
-                </p>
-              </div>
-
-              {/* Check */}
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success-500 text-white sm:h-6 sm:w-6">
-                <Check
-                  size={11}
-                  strokeWidth={3}
-                  className="sm:h-[13px] sm:w-[13px]"
-                />
-              </div>
-            </div>
-
-            {/* ACTIONS */}
-            <div className="mt-5 space-y-2 sm:mt-6 sm:space-y-2.5">
-              {/* View Deals */}
-              <button
-                type="button"
-                onClick={onViewDeals}
-                className="group flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 text-xs font-medium text-white shadow-sm shadow-brand-500/20 transition hover:bg-brand-600 hover:shadow-md sm:h-11 sm:px-5 sm:text-sm"
-              >
-                View Deals
-                <ArrowRight
-                  size={15}
-                  className="transition-transform group-hover:translate-x-0.5 sm:h-4 sm:w-4"
-                />
-              </button>
-            </div>
-
-            {/* FOOTNOTE */}
-            <p className="mt-4 text-center text-[10px] leading-4 text-gray-400 sm:mt-5 sm:text-xs">
-              You can edit this deal anytime from your deals dashboard.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }

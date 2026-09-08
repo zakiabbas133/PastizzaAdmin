@@ -160,7 +160,7 @@ export default function Deals() {
     }
 
     return Math.round(((originalPrice - price) / originalPrice) * 100);
-  };
+  };  
 
   return (
     <>
@@ -359,15 +359,18 @@ export default function Deals() {
 
                       {/* ITEMS */}
                       <div className="mt-4 space-y-1.5">
-                        {deal.items.slice(0, 3).map((item) => (
-                          <div
-                            key={item}
-                            className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400"
-                          >
-                            <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-                            {item}
-                          </div>
-                        ))}
+                        {deal?.dealItems?.slice(0, 3).map((item) => {
+                          console.log(deal)
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400"
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+                              {item.menuItemName} X{item.quantity}
+                            </div>
+                          );
+                        })}
 
                         {deal.items.length > 3 && (
                           <p className="text-xs text-gray-400">
