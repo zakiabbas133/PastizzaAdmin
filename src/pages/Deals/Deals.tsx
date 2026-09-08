@@ -367,7 +367,7 @@ export default function Deals() {
                               className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400"
                             >
                               <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-                              {item.menuItemName} X{item.quantity}
+                              {item.quantity}x {item.menuItemName}
                             </div>
                           );
                         })}
