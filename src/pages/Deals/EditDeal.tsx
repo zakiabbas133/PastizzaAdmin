@@ -1226,6 +1226,9 @@ export default function EditDeal() {
                       }
                       alt={form.title}
                       className="h-56 w-full object-cover sm:h-72"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholderlandscape.png";
+                      }}
                     />
 
                     <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-3 bg-gradient-to-t from-black/80 via-black/30 to-transparent px-4 pb-3 pt-14 sm:flex-row sm:items-end sm:justify-between">
@@ -1401,6 +1404,9 @@ export default function EditDeal() {
                               }
                               alt={menuItem.name}
                               className="h-full w-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "/placeholder.png";
+                              }}
                             />
                           ) : (
                             <Utensils size={21} className="text-gray-400" />

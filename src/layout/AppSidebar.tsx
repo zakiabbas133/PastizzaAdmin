@@ -292,7 +292,7 @@ const AppSidebar: React.FC = () => {
       >
         <Link to="/" onClick={handleToggle}>
           {isExpanded || isHovered || !isMobileOpen ? (
-            <>
+            <div className="flex items-center gap-3">
               <img
                 className="dark:hidden"
                 src="/images/logo/logo-icon.svg"
@@ -307,7 +307,8 @@ const AppSidebar: React.FC = () => {
                 width={50}
                 height={50}
               />
-            </>
+              <h1>Pastizza</h1>
+            </div>
           ) : (
             <img
               src="/images/logo/logo-icon.svg"

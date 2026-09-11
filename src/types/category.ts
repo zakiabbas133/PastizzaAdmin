@@ -7,6 +7,12 @@ export interface Category {
   displayOrder: number;
 }
 
+export interface AdminInfo {
+  username: string;
+  email: string;
+  fullName: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message?: string;

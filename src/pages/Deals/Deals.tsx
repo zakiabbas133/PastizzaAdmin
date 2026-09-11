@@ -11,6 +11,7 @@ import {
   Trash2,
   X,
   AlertTriangle,
+  ChevronRight,
 } from "lucide-react";
 
 import type { Deal } from "../../types";
@@ -160,7 +161,7 @@ export default function Deals() {
     }
 
     return Math.round(((originalPrice - price) / originalPrice) * 100);
-  };  
+  };
 
   return (
     <>
@@ -177,7 +178,15 @@ export default function Deals() {
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-title-md font-semibold text-gray-800 dark:text-white/90">
+          <div className="mb-2 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <span>Home</span>
+
+            <ChevronRight size={15} />
+
+            <span>Deals</span>
+          </div>
+
+          <h1 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
             Deals
           </h1>
 
@@ -316,6 +325,9 @@ export default function Deals() {
                         src={baseUrl + deal.image}
                         alt={deal.title}
                         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholderlandscape.png";
+                        }}
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-gray-400">
@@ -478,6 +490,9 @@ export default function Deals() {
                               src={baseUrl + deal.image}
                               alt={deal.title}
                               className="h-full w-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "/placeholder.png";
+                              }}
                             />
                           )}
                         </div>

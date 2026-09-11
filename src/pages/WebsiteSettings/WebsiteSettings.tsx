@@ -1187,6 +1187,9 @@ export default function WebsiteSettings() {
                       src={logoPreview || `${baseUrl}${websiteSettings.logo}`}
                       alt="Website logo"
                       className="h-full w-full object-contain p-3"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder.png";
+                      }}
                     />
                   ) : (
                     <ImageIcon size={30} className="text-gray-400" />
@@ -1498,6 +1501,9 @@ export default function WebsiteSettings() {
                         src={`${baseUrl}${image}`}
                         alt={`Slider ${index + 1}`}
                         className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholderlandscape.png";
+                        }}
                       />
 
                       <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/30" />
@@ -1526,6 +1532,9 @@ export default function WebsiteSettings() {
                         src={preview}
                         alt={`New slider ${index + 1}`}
                         className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholderlandscape.png";
+                        }}
                       />
 
                       <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/30" />

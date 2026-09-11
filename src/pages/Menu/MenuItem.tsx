@@ -23,10 +23,8 @@ export default function MenuItemDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const {
-    data: menuItems = [],
-    isLoading: menuItemsLoading,
-  } = useGetMenuItemsQuery();
+  const { data: menuItems = [], isLoading: menuItemsLoading } =
+    useGetMenuItemsQuery();
 
   /*
    * IMPORTANT:
@@ -140,6 +138,9 @@ export default function MenuItemDetails() {
                 src={baseUrl + item.image}
                 alt={item.name}
                 className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholderlandscape.png";
+                }}
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
@@ -228,7 +229,10 @@ export default function MenuItemDetails() {
 
               <div className="flex items-end gap-2">
                 <span className="text-2xl font-semibold text-gray-800 dark:text-white/90">
-                  Rs. {item.variants.length == 0 ? item.price :formatPrice(startingPrice)}
+                  Rs.{" "}
+                  {item.variants.length == 0
+                    ? item.price
+                    : formatPrice(startingPrice)}
                 </span>
 
                 {startingPrice !== highestPrice && (
@@ -532,7 +536,7 @@ function InfoRow({
   label: string;
   value: string;
   monospace?: boolean;
-}) { 
+}) {
   return (
     <div className="flex items-start justify-between gap-4">
       <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>

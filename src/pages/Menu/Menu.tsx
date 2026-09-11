@@ -60,7 +60,7 @@ export default function MenuItems() {
     data: categories = [],
     isLoading: categoriesLoading,
     isError: categoriesError,
-  } = useGetCategoriesQuery();  
+  } = useGetCategoriesQuery();
 
   const [deleteMenuItem] = useDeleteMenuItemMutation();
 
@@ -220,7 +220,10 @@ export default function MenuItems() {
     } catch (error: unknown) {
       const apiError = error as { data?: { message?: string } };
 
-      showToast(apiError?.data?.message ?? "Failed to delete menu item.", "error");
+      showToast(
+        apiError?.data?.message ?? "Failed to delete menu item.",
+        "error",
+      );
       console.error("Failed to delete menu item:", error);
     } finally {
       setIsDeleting(false);
@@ -675,6 +678,9 @@ function MenuItemCard({
             src={baseUrl + item.image}
             alt={item.name}
             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            onError={(e) => {
+              e.currentTarget.src = "/placeholderlandscape.png";
+            }}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-gray-400">
@@ -822,6 +828,9 @@ function MenuItemTable({
                         src={baseUrl + item.image}
                         alt={item.name}
                         className="h-12 w-16 rounded-lg object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholderlandscape.png";
+                        }}
                       />
                     ) : (
                       <div className="flex h-12 w-16 items-center justify-center rounded-lg bg-gray-100 text-gray-400 dark:bg-gray-800">
@@ -1031,6 +1040,9 @@ function DeleteConfirmationModal({
                 src={baseUrl + item.image}
                 alt={item.name}
                 className="h-16 w-20 shrink-0 rounded-lg object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholderlandscape.png";
+                }}
               />
             ) : (
               <div className="flex h-16 w-20 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-400 dark:bg-gray-700">

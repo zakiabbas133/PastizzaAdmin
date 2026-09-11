@@ -931,6 +931,9 @@ export default function Categories() {
                                 src={baseUrl + category.image}
                                 alt={category.label}
                                 className="h-full w-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/placeholder.png'
+                                }}
                               />
                             ) : (
                               <ImageIcon size={20} className="text-gray-400" />

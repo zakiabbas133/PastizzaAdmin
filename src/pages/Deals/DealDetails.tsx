@@ -15,7 +15,7 @@ import { baseUrl } from "../../services/api";
 export default function DealDetails() {
   const { id } = useParams();
   const { data, isLoading: dealsLoading } = useGetDealsQuery();
- 
+
   const navigate = useNavigate();
 
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -127,6 +127,9 @@ export default function DealDetails() {
                 src={baseUrl + deal.image}
                 alt={deal.title}
                 className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholderlandscape.png";
+                }}
               />
             ) : (
               <div className="flex h-full items-center justify-center bg-gray-100 text-gray-400 dark:bg-gray-800">
@@ -218,7 +221,9 @@ export default function DealDetails() {
 
           <div className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3 lg:p-6">
             {(deal.dealItems ?? []).map((item, index) => {
-              const itemName = item.menuItemName ?? item.menuItemVariantName ?? "Menu item";
+              const itemName =
+                item.menuItemName ?? item.menuItemVariantName ?? "Menu item";
+              const itemQuantity = item.quantity ?? 1;
 
               return (
                 <div
@@ -230,7 +235,9 @@ export default function DealDetails() {
                   </div>
 
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {itemName}
+                    <Link to={"/menu-items/" + item?.menuItemId}>
+                      {itemQuantity}X {itemName}
+                    </Link>
                   </p>
                 </div>
               );

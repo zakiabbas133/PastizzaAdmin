@@ -9,6 +9,7 @@ import {
 import { logout } from "../features/auth/authSlice";
 
 import type { LoginResponse } from "../types/auth";
+import { AdminInfo } from "../types/category";
 
 export const baseUrl = import.meta.env.VITE_BASE_URL;
 
@@ -67,6 +68,19 @@ export const api = createApi({
         body: formData,
       }),
     }),
+    getAdminInfo: builder.query<
+      {
+        success: boolean;
+        message: string;
+        adminInfo: AdminInfo;
+      },
+      void
+    >({
+      query: () => ({
+        url: "/Account/GetAdminInfoOnSignup",
+        method: "GET",
+      }),
+    }),
     logout: builder.mutation<{ success: boolean; message: string }, void>({
       query: () => ({
         url: "/Account/Logout",
@@ -76,4 +90,5 @@ export const api = createApi({
   }),
 });
 
-export const { useLoginMutation, useLogoutMutation } = api;
+export const { useLoginMutation, useLogoutMutation, useGetAdminInfoQuery } =
+  api;

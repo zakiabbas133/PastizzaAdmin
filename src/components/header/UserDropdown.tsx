@@ -3,12 +3,14 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { useNavigate } from "react-router";
 import { useAppDispatch } from "../../app/hooks";
 import { clearCredentials } from "../../features/auth/authSlice";
-import { useLogoutMutation } from "../../services/api";
+import { useGetAdminInfoQuery, useLogoutMutation } from "../../services/api";
 
 export default function UserDropdown() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [logout, { isLoading }] = useLogoutMutation();
+  const { data: userData = null } = useGetAdminInfoQuery();
+  
   const [isOpen, setIsOpen] = useState(false);
 
   function toggleDropdown() {
@@ -43,7 +45,6 @@ export default function UserDropdown() {
       >
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
           <img
-            className="dark:hidden"
             src="/images/logo/logo-icon.svg"
             alt="Logo"
             width={150}
@@ -51,7 +52,7 @@ export default function UserDropdown() {
           />
         </span>
 
-        <span className="block mr-1 font-medium text-theme-sm">Admin</span>
+        <span className="block mr-1 font-medium text-theme-sm">{userData?.adminInfo.fullName}</span>
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
@@ -79,10 +80,10 @@ export default function UserDropdown() {
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-            Admin
+            {userData?.adminInfo.fullName}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            randomuser@pimjo.com
+            {userData?.adminInfo.email}
           </span>
         </div>
 
@@ -108,7 +109,7 @@ export default function UserDropdown() {
               fill=""
             />
           </svg>
-          {isLoading ? 'Signing out' : 'Sign out'}
+          {isLoading ? "Signing out" : "Sign out"}
         </div>
       </Dropdown>
     </div>
