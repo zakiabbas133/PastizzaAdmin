@@ -286,13 +286,13 @@ const AppSidebar: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`my-6 flex ${
+        className={`my-6 ${
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-left"
         }`}
       >
-        <Link to="/" onClick={handleToggle}>
+        <Link to="/" onClick={handleToggle} className="flex items-center gap-3">
           {isExpanded || isHovered || !isMobileOpen ? (
-            <div className="flex items-center gap-3">
+            <>
               <img
                 className="dark:hidden"
                 src="/images/logo/logo-icon.svg"
@@ -307,8 +307,7 @@ const AppSidebar: React.FC = () => {
                 width={50}
                 height={50}
               />
-              <h1>Pastizza</h1>
-            </div>
+            </>
           ) : (
             <img
               src="/images/logo/logo-icon.svg"
@@ -316,6 +315,9 @@ const AppSidebar: React.FC = () => {
               width={32}
               height={32}
             />
+          )}
+          {(isMobileOpen || isExpanded) && (
+            <h1 className="font-semibold text-title-sm">Pastizza</h1>
           )}
         </Link>
       </div>
