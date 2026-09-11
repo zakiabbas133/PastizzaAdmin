@@ -729,10 +729,12 @@ function MenuItemCard({
             {getCategoryLabel(item.categoryName ?? "")}
           </span>
 
-          <span className="text-xs text-gray-400">
-            {item.variants?.length ?? 0}{" "}
-            {(item.variants?.length ?? 0) === 1 ? "variant" : "variants"}
-          </span>
+          {item.variants?.length > 0 && (
+            <span className="text-xs text-gray-400">
+              {item.variants?.length ?? 0}{" "}
+              {(item.variants?.length ?? 0) === 1 ? "variant" : "variants"}
+            </span>
+          )}
         </div>
 
         <h3 className="truncate text-base font-semibold text-gray-800 dark:text-white/90">
