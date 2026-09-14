@@ -14,8 +14,6 @@ export default function UserDropdown() {
 
   const [isOpen, setIsOpen] = useState(false);
 
-  console.log(isAuthenticated);
-
   function toggleDropdown() {
     setIsOpen(!isOpen);
   }
