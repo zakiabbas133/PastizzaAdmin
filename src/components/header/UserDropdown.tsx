@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { useNavigate } from "react-router";
-import { useAppDispatch } from "../../app/hooks";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { clearCredentials } from "../../features/auth/authSlice";
 import { useGetAdminInfoQuery, useLogoutMutation } from "../../services/api";
 
@@ -10,8 +10,11 @@ export default function UserDropdown() {
   const dispatch = useAppDispatch();
   const [logout, { isLoading }] = useLogoutMutation();
   const { data: userData = null } = useGetAdminInfoQuery();
-  
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+
   const [isOpen, setIsOpen] = useState(false);
+
+  console.log(isAuthenticated);
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -37,6 +40,14 @@ export default function UserDropdown() {
     }
   };
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/signup", {
+        replace: true,
+      });
+    }
+  }, [isAuthenticated, navigate]);
+
   return (
     <div className="relative">
       <button
@@ -52,7 +63,9 @@ export default function UserDropdown() {
           />
         </span>
 
-        <span className="block mr-1 font-medium text-theme-sm">{userData?.adminInfo.fullName}</span>
+        <span className="block mr-1 font-medium text-theme-sm">
+          {userData?.adminInfo.fullName}
+        </span>
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""

@@ -1622,6 +1622,9 @@ export default function WebsiteSettings() {
                       controls
                       playsInline
                       className="h-full w-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.src = '/heropizza.mp4'
+                      }}
                     />
                   </div>
 
