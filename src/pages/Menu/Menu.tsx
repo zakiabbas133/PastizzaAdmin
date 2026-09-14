@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router";
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,19 +14,14 @@ import {
   Utensils,
   X,
 } from "lucide-react";
-
-import type { MenuItem } from "../../types";
-import { Link, useNavigate } from "react-router";
-
 import {
   useDeleteMenuItemMutation,
   useGetMenuItemsQuery,
 } from "../../services/menuApi";
-
 import { useGetCategoriesQuery } from "../../services/categoriesApi";
-
-import DashboardLoader from "../../components/loaders/DashboardLoader";
 import { baseUrl } from "../../services/api";
+import type { MenuItem } from "../../types";
+import DashboardLoader from "../../components/loaders/DashboardLoader";
 import Toast from "../../components/toast/Toast";
 
 type ViewMode = "grid" | "list";

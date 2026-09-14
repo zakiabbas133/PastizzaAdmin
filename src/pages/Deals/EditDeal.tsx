@@ -1,4 +1,5 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,7 +12,6 @@ import {
   Utensils,
   X,
 } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router";
 import {
   useGetDealsQuery,
   useAddOrUpdateDealMutation,

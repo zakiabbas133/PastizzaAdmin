@@ -11,25 +11,24 @@ import {
   Upload,
   X,
 } from "lucide-react";
-
-import type { Location } from "../../types";
 import {
   useAddOrUpdateWebsiteSettingsMutation,
   useGetWebsiteSettingsQuery,
 } from "../../services/websiteSettingsApi";
-import Toast from "../../components/toast/Toast";
-import { baseUrl } from "../../services/api";
-import DashboardLoader from "../../components/loaders/DashboardLoader";
-import LocationPicker from "../../components/locationPicker/LocationPicker";
 import {
   useAddLocationMutation,
   useGetLocationsQuery,
   useRemoveLocationMutation,
   useUpdateLocationMutation,
 } from "../../services/locationsApi";
+import { baseUrl } from "../../services/api";
+import type { Location } from "../../types";
+import DashboardLoader from "../../components/loaders/DashboardLoader";
+import LocationPicker from "../../components/locationPicker/LocationPicker";
+import Toast from "../../components/toast/Toast";
 
 /* ========================================================================
-   TYPES
+TYPES
 ======================================================================== */
 
 interface WebsiteSettingsData {
@@ -1623,7 +1622,7 @@ export default function WebsiteSettings() {
                       playsInline
                       className="h-full w-full object-contain"
                       onError={(e) => {
-                        e.currentTarget.src = '/heropizza.mp4'
+                        e.currentTarget.src = "/heropizza.mp4";
                       }}
                     />
                   </div>

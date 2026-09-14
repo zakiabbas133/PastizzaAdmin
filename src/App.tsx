@@ -1,24 +1,18 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import { ScrollToTop } from "./components/common/ScrollToTop";
-
 import SignIn from "./pages/AuthPages/SignIn";
 import NotFound from "./pages/OtherPage/NotFound";
-
 import AppLayout from "./layout/AppLayout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-
 import AddMenu from "./pages/Menu/AddMenu";
 import Menu from "./pages/Menu/Menu";
 import MenuItemDetails from "./pages/Menu/MenuItem";
 import EditMenu from "./pages/Menu/EditMenu";
-
 import Categories from "./pages/Category/Categories";
-
 import Deals from "./pages/Deals/Deals";
 import CreateDeal from "./pages/Deals/CreateDeal";
 import DealDetails from "./pages/Deals/DealDetails";
 import EditDeal from "./pages/Deals/EditDeal";
-
 import WebsiteSettings from "./pages/WebsiteSettings/WebsiteSettings";
 
 export default function App() {

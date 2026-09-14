@@ -10,11 +10,10 @@ import {
   Tag,
   Utensils,
 } from "lucide-react";
-
 import { useGetMenuItemsQuery } from "../../services/menuApi";
-import DashboardLoader from "../../components/loaders/DashboardLoader";
 import { MenuItem } from "../../types";
 import { baseUrl } from "../../services/api";
+import DashboardLoader from "../../components/loaders/DashboardLoader";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("en-PK").format(price);

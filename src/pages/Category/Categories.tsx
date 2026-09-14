@@ -1,4 +1,5 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   AlertTriangle,
   Edit3,
@@ -10,9 +11,6 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
-
-import type { CategoryMeta } from "../../types";
 import {
   useCreateCategoryMutation,
   useDeleteCategoryMutation,
@@ -21,6 +19,7 @@ import {
   useUpdateCategoryOrderMutation,
 } from "../../services/categoriesApi";
 import { baseUrl } from "../../services/api";
+import type { CategoryMeta } from "../../types";
 import CategoryShimmer from "../../components/loaders/CategoryShimmer";
 import Toast from "../../components/toast/Toast";
 

@@ -13,14 +13,13 @@ import {
   AlertTriangle,
   ChevronRight,
 } from "lucide-react";
-
-import type { Deal } from "../../types";
 import {
   useDeleteDealMutation,
   useGetDealsQuery,
 } from "../../services/dealsApi";
-import DashboardLoader from "../../components/loaders/DashboardLoader";
 import { baseUrl } from "../../services/api";
+import type { Deal } from "../../types";
+import DashboardLoader from "../../components/loaders/DashboardLoader";
 import Toast from "../../components/toast/Toast";
 
 export default function Deals() {

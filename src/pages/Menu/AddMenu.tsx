@@ -12,11 +12,8 @@ import {
   Utensils,
   X,
 } from "lucide-react";
-
 import { useNavigate } from "react-router";
-
 import { useCreateMenuItemMutation } from "../../services/menuApi";
-
 import { useGetCategoriesQuery } from "../../services/categoriesApi";
 
 /* ========================================================================== */
@@ -354,7 +351,8 @@ export default function AddMenu() {
     );
 
     if (hasInvalidPrice) {
-      nextErrors.variants = "Please enter a valid price for every filled-in variant.";
+      nextErrors.variants =
+        "Please enter a valid price for every filled-in variant.";
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -514,7 +512,10 @@ export default function AddMenu() {
                       value={name}
                       onChange={(event) => {
                         handleNameChange(event.target.value);
-                        setFormErrors((current) => ({ ...current, name: undefined }));
+                        setFormErrors((current) => ({
+                          ...current,
+                          name: undefined,
+                        }));
                       }}
                       placeholder="e.g. Margherita Classica"
                       className={`${inputClass} ${
@@ -538,7 +539,10 @@ export default function AddMenu() {
                         value={slug}
                         onChange={(event) => {
                           setSlug(event.target.value);
-                          setFormErrors((current) => ({ ...current, slug: undefined }));
+                          setFormErrors((current) => ({
+                            ...current,
+                            slug: undefined,
+                          }));
                         }}
                         placeholder="margherita-classica"
                         className={`${inputClass} ${
@@ -564,7 +568,10 @@ export default function AddMenu() {
                         value={price}
                         onChange={(event) => {
                           setPrice(event.target.value);
-                          setFormErrors((current) => ({ ...current, price: undefined }));
+                          setFormErrors((current) => ({
+                            ...current,
+                            price: undefined,
+                          }));
                         }}
                         placeholder="99"
                         className={`${inputClass} ${
@@ -590,7 +597,10 @@ export default function AddMenu() {
                         value={categoryId}
                         onChange={(event) => {
                           setCategoryId(event.target.value);
-                          setFormErrors((current) => ({ ...current, categoryId: undefined }));
+                          setFormErrors((current) => ({
+                            ...current,
+                            categoryId: undefined,
+                          }));
                         }}
                         className={`${inputClass} appearance-none pr-10 ${
                           formErrors.categoryId
@@ -609,7 +619,8 @@ export default function AddMenu() {
                           .filter(
                             (item) =>
                               item.id !==
-                              "00000000-0000-0000-0000-000000000000" && item.description != "all",
+                                "00000000-0000-0000-0000-000000000000" &&
+                              item.description != "all",
                           )
                           .map((item) => (
                             <option key={item.id} value={item.id}>
@@ -638,7 +649,10 @@ export default function AddMenu() {
                       value={description}
                       onChange={(event) => {
                         setDescription(event.target.value);
-                        setFormErrors((current) => ({ ...current, description: undefined }));
+                        setFormErrors((current) => ({
+                          ...current,
+                          description: undefined,
+                        }));
                       }}
                       placeholder="Describe the ingredients, preparation and taste of this item..."
                       rows={5}
@@ -812,7 +826,9 @@ export default function AddMenu() {
                   />
 
                   {formErrors.image && (
-                    <p className="mb-3 text-xs text-error-500">{formErrors.image}</p>
+                    <p className="mb-3 text-xs text-error-500">
+                      {formErrors.image}
+                    </p>
                   )}
 
                   {image ? (
