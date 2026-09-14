@@ -932,7 +932,7 @@ export default function Categories() {
                                 alt={category.label}
                                 className="h-full w-full object-cover"
                                 onError={(e) => {
-                                  e.currentTarget.src = '/placeholder.png'
+                                  e.currentTarget.src = "/placeholder.png";
                                 }}
                               />
                             ) : (
@@ -1224,6 +1224,9 @@ export default function Categories() {
                             }
                             alt="Category preview"
                             className="h-48 w-full object-cover sm:h-56"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholderlandscape.png";
+                            }}
                           />
 
                           <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/80 via-black/30 to-transparent px-4 pb-3 pt-12">
